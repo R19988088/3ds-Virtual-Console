@@ -4,9 +4,17 @@
   <img src="assets/logo.png" alt="vcoven logo" width="280" />
 </p>
 
-> *Bake your own GBA Virtual Console titles for the Nintendo 3DS. Mac-native CLI, no donor required, no Wine, no Docker.*
+> *Bake your own GBA Virtual Console titles for the Nintendo 3DS. CLI tool, no donor required, no Wine, no Docker.*
 
-> ⚠️ **Linux support is experimental.** macOS (Apple Silicon and Intel) is the primary target. Linux x86_64 builds via the same `brew tap` but hasn't been battle-tested yet — file an issue if you hit problems. Windows is not supported in v0.1.
+## Supported platforms
+
+| Platform | v0.1 status |
+|----------|-------------|
+| **macOS Apple Silicon** (arm64) | ✅ stable — primary target, fully tested end-to-end |
+| **Linux x86_64** | ⚠️ experimental — installs via the same `brew tap`, builds prebuilt in CI but not battle-tested. File an issue if you hit problems. |
+| macOS Intel (x86_64) | ❌ not in v0.1 — GitHub deprecated Intel macOS CI runners. Tracked for v0.2 via PyPI distribution. |
+| Linux ARM (aarch64) | ❌ not in v0.1 — upstream tools don't ship ARM Linux binaries. Tracked for v0.2. |
+| Windows | ❌ not in v0.1 — needs PyPI/Scoop distribution. Tracked for v0.2. |
 
 `vcoven` builds installable Game Boy Advance Virtual Console CIA files from `.gba` ROMs on macOS. Drop in a ROM, get a CIA. Install with FBI on a hacked 3DS, and the game appears as its own home menu icon — running on the 3DS's actual GBA hardware (every 3DS has a real GBA chip inside).
 
@@ -122,7 +130,7 @@ brew tap vedoot/vcoven
 brew install vcoven
 ```
 
-This installs `vcoven` to `/opt/homebrew/bin/vcoven` (Apple Silicon) or `/usr/local/bin/vcoven` (Intel), with all dependencies bundled.
+This installs `vcoven` to `/opt/homebrew/bin/vcoven` on macOS (Apple Silicon) or `/home/linuxbrew/.linuxbrew/bin/vcoven` on Linux, with all dependencies bundled.
 
 ### Manual install (development / Linux)
 
@@ -345,14 +353,19 @@ You bring your own ROMs. vcoven does not distribute or facilitate the download o
 
 ---
 
-## What's not yet handled
+## Roadmap
 
+**v0.2 (planned):**
+- [ ] **macOS Intel** support (via universal binary build or PyPI distribution)
+- [ ] **Linux ARM (aarch64)** support — requires building all 4 tools from source on ARM CI
+- [ ] **Windows x86_64** support — distribute as a PyPI package and/or Scoop manifest
+- [ ] **PyPI distribution** (`pip install vcoven`) — universal install command across all platforms
+
+**Later:**
 - [ ] **Animated banners** — currently the banner is a static PNG wrapped in CGFX. Real Nintendo banners have rotation/animation keyframes baked into the CGFX. Doable via surgical CGFX texture swap.
 - [ ] **Custom audio** in the banner (currently silent WAV)
-- [ ] **User-supplied icon images** as an alternative to the generated badge
 - [ ] **Region/language-specific titles** (currently all 16 SMDH slots get the same English text)
 - [ ] **Save data import** from emulator `.sav` files
-- [ ] **Linux + Windows binaries** (just need different platform builds for the toolchain)
 - [ ] **RSF-based scratch build** — eliminate the donor template entirely by constructing the NCCH from scratch with `makerom`'s RSF format
 
 ---
