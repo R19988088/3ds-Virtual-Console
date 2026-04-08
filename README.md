@@ -6,6 +6,8 @@
 
 > *Bake your own GBA Virtual Console titles for the Nintendo 3DS. Mac-native CLI, no donor required, no Wine, no Docker.*
 
+> ⚠️ **Linux support is experimental.** macOS (Apple Silicon and Intel) is the primary target. Linux x86_64 builds via the same `brew tap` but hasn't been battle-tested yet — file an issue if you hit problems. Windows is not supported in v0.1.
+
 `vcoven` builds installable Game Boy Advance Virtual Console CIA files from `.gba` ROMs on macOS. Drop in a ROM, get a CIA. Install with FBI on a hacked 3DS, and the game appears as its own home menu icon — running on the 3DS's actual GBA hardware (every 3DS has a real GBA chip inside).
 
 ```bash
