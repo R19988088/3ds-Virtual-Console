@@ -1,0 +1,31 @@
+# Donor CIA — your personal dump, not for redistribution
+donor/*.cia
+donor/cxi/
+donor/file.*
+
+# Built injects — contain user ROMs
+output/*.cia
+
+# User ROMs and saves
+*.gba
+*.nds
+*.sav
+
+# Build artifacts
+build/
+work/
+__pycache__/
+*.pyc
+.DS_Store
+
+# Tool binaries — too large, fetched per-platform via the homebrew formula
+tools/makerom
+tools/ctrtool
+tools/3dstool
+tools/bannertool_bin
+
+# vcoven user data dir for testing
+.vcoven_data/
+
+# template/ IS committed — it's the bundled permission template that makes
+# vcoven self-contained. See LICENSE for legal notes.

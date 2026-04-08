@@ -1,0 +1,30 @@
+# Example batch config for vcoven.
+# Run with: vcoven batch examples/batch.toml
+#
+# All paths (rom, icon, banner) are resolved relative to this config file.
+# Output CIAs go to `output_dir`, also relative to this file.
+
+output_dir = "../output"  # resolved relative to this config file
+
+[[game]]
+name         = "MyGame1"
+rom          = "../path/to/game1.gba"
+icon         = "art/sample_icon.png"
+banner       = "art/sample_banner.png"
+title        = "My GBA Game"
+long_title   = "My Custom GBA Game (Long Description)"
+publisher    = "Independent Developer"
+title_id     = "0004000000F00100"
+product_code = "CTR-N-MGB1"
+
+[[game]]
+name         = "MyGame2"
+rom          = "../path/to/game2.gba"
+icon         = "art/sample_icon.png"
+banner       = "art/sample_banner.png"
+title        = "Another Game"
+long_title   = "Another GBA Game"
+publisher    = "Another Developer"
+title_id     = "0004000000F00200"
+product_code = "CTR-N-MGB2"
+# save_type  = "flash1m"   # optional override (default: auto-detect from ROM)
