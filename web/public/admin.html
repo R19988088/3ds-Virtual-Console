@@ -44,11 +44,33 @@
   .tabs { display: flex; gap: 4px; margin-bottom: 12px; }
   .tab { padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 13px; color: #8b949e; background: none; border: 1px solid #30363d; }
   .tab.active { background: #21262d; color: #f0f6fc; border-color: #58a6ff; }
+  .gate { max-width: 420px; margin: 120px auto; text-align: center; padding: 40px 32px; border: 1px solid #30363d; border-radius: 10px; background: #161b22; }
+  .gate h1 { font-size: 22px; margin-bottom: 10px; color: #f0f6fc; }
+  .gate p  { color: #8b949e; margin-bottom: 24px; font-size: 14px; }
+  .gate button { background: #58a6ff; color: #0d1117; border: 0; padding: 10px 22px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .gate button:hover { filter: brightness(1.08); }
+  .gate .err { color: #f85149; }
+  .signout { background: none; border: 1px solid #30363d; color: #8b949e; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-left: 8px; }
+  .signout:hover { border-color: #f85149; color: #f85149; }
 </style>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 </head>
 <body>
 
-<h1>vcoven dashboard <button class="refresh" onclick="loadAll()">refresh</button></h1>
+<div id="auth-gate" class="gate" style="display:none;">
+  <h1>vcoven admin</h1>
+  <p id="gate-msg">Sign in with Google to access the dashboard.</p>
+  <button id="signin-btn" onclick="signIn()">Sign in with Google</button>
+</div>
+
+<div id="admin-content" style="display:none;">
+
+<h1>vcoven dashboard
+  <button class="refresh" onclick="loadAll()">refresh</button>
+  <button class="signout" onclick="signOut()">sign out</button>
+  <span id="who" style="float:right;color:#8b949e;font-size:12px;font-weight:400;margin-top:6px;"></span>
+</h1>
 
 <div class="stats" id="stat-cards"></div>
 
@@ -97,6 +119,52 @@
 const API = 'https://vcoven-api-5940458611.us-central1.run.app'
 const FB_API = 'https://firestore.googleapis.com/v1/projects/vcoven-web/databases/(default)/documents'
 const FB_KEY = 'AIzaSyCioXpCJN2d2cJobdox8k3KuTc7hwMrmfo'
+const ADMIN_EMAILS = new Set(['mehtavedant99@gmail.com'])
+
+firebase.initializeApp({
+  apiKey: FB_KEY,
+  authDomain: 'vcoven-web.firebaseapp.com',
+  projectId: 'vcoven-web',
+})
+
+let idToken = null
+
+async function signIn() {
+  const provider = new firebase.auth.GoogleAuthProvider()
+  try { await firebase.auth().signInWithPopup(provider) }
+  catch (e) { document.getElementById('gate-msg').innerHTML = `<span class="err">${e.message}</span>` }
+}
+
+async function signOut() {
+  await firebase.auth().signOut()
+  location.reload()
+}
+
+firebase.auth().onAuthStateChanged(async user => {
+  const gate = document.getElementById('auth-gate')
+  const content = document.getElementById('admin-content')
+  if (!user) {
+    gate.style.display = ''; content.style.display = 'none'
+    return
+  }
+  if (!user.emailVerified || !ADMIN_EMAILS.has(user.email)) {
+    gate.style.display = ''; content.style.display = 'none'
+    document.getElementById('gate-msg').innerHTML =
+      `<span class="err">${user.email} is not authorized.</span><br><br>
+       <button class="signout" onclick="signOut()">Sign out and try another account</button>`
+    document.getElementById('signin-btn').style.display = 'none'
+    return
+  }
+  idToken = await user.getIdToken()
+  gate.style.display = 'none'
+  content.style.display = ''
+  document.getElementById('who').textContent = user.email
+  loadAll()
+})
+
+function authHeaders() {
+  return idToken ? { Authorization: `Bearer ${idToken}` } : {}
+}
 
 let allBuilds = []
 let currentFilter = 'all'
@@ -140,9 +208,9 @@ async function fetchAllBuilds() {
   const docs = []
   let pageToken = ''
   for (let i = 0; i < 50; i++) {  // hard cap: 50 pages * 300 = 15000 docs
-    const params = new URLSearchParams({ key: FB_KEY, pageSize: '300', orderBy: 'timestamp desc' })
+    const params = new URLSearchParams({ pageSize: '300', orderBy: 'timestamp desc' })
     if (pageToken) params.set('pageToken', pageToken)
-    const res = await fetch(`${FB_API}/builds?${params}`)
+    const res = await fetch(`${FB_API}/builds?${params}`, { headers: authHeaders() })
     if (!res.ok) break
     const data = await res.json()
     if (data.documents) docs.push(...data.documents)
@@ -154,13 +222,11 @@ async function fetchAllBuilds() {
 
 async function loadAll() {
   try {
-    const [statsRes, feedbackRes, buildDocs] = await Promise.all([
-      fetch(`${API}/admin/stats`),
-      fetch(`${FB_API}/feedback?key=${FB_KEY}`),
+    const [feedbackRes, buildDocs] = await Promise.all([
+      fetch(`${FB_API}/feedback?pageSize=300`, { headers: authHeaders() }),
       fetchAllBuilds(),
     ])
 
-    const stats = statsRes.ok ? await statsRes.json() : { total_builds: 0, today_builds: 0, total_size_mb: 0, builds: [] }
     const fbData = await feedbackRes.json().catch(() => ({}))
 
     const fsDocs = (buildDocs || []).map(d => {
@@ -185,6 +251,7 @@ async function loadAll() {
 
     allBuilds = fsDocs
 
+    const stats = statsFromDocs(fsDocs)
     renderStats(stats, fsDocs)
     renderChart(stats.builds)
     renderBuilds(fsDocs)
@@ -193,6 +260,25 @@ async function loadAll() {
     renderFeedback(fbData.documents || [])
   } catch (e) {
     console.error(e)
+  }
+}
+
+function statsFromDocs(docs) {
+  // All-time stats computed from the full doc set we already paginated.
+  // Replaces the old /admin/stats server call.
+  const today = new Date().toISOString().slice(0, 10)
+  let totalSize = 0
+  let todayCount = 0
+  const builds = docs.map(d => {
+    totalSize += d.outputSize || 0
+    if (d.timestamp && d.timestamp.slice(0, 10) === today) todayCount++
+    return { name: d.outputFile, size: d.outputSize || 0, created: d.timestamp }
+  })
+  return {
+    total_builds: docs.length,
+    today_builds: todayCount,
+    total_size_mb: Math.round(totalSize / 1024 / 1024 * 10) / 10,
+    builds,
   }
 }
 
@@ -324,7 +410,11 @@ function renderFeedback(docs) {
   }).join('')
 }
 
-loadAll()
+// loadAll is triggered by the auth state listener when the user is
+// signed in with an authorized email — do not call it eagerly here.
 </script>
+
+</div><!-- /#admin-content -->
+
 </body>
 </html>

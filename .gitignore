@@ -27,5 +27,13 @@ tools/bannertool_bin
 # vcoven user data dir for testing
 .vcoven_data/
 
+# Local debugging corpora — test ROM/CIA sets and user-uploaded images kept
+# for manual repro. Never pushed; excluded even if they contain no .gba/.nds
+# (which the earlier rules already cover on a per-file basis).
+test-roms/
+test-cias/
+test-cia(working)/
+used-images/
+
 # template/ IS committed — it's the bundled permission template that makes
 # vcoven self-contained. See LICENSE for legal notes.
