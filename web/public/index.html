@@ -440,7 +440,8 @@ select { cursor: pointer; }
       <p>vcoven builds installable <strong>.cia</strong> files that let you play GBA games on a hacked 3DS using the console's <strong>native GBA hardware</strong> — not emulated. Games run at full speed with the official Virtual Console boot animation and integrate into the 3DS home menu with your custom icon and banner.</p>
       <p><strong>You need:</strong> A GBA ROM (.gba), a square icon image (48×48), a banner image (256×128), and a unique Title ID.</p>
       <p><strong>Install:</strong> Transfer the .cia to your 3DS SD card and install with FBI.</p>
-      <p><strong style="color:#f85149">GBA Video ROMs are not supported.</strong> Video carts (e.g. Pokemon Video, Disney Video) are 32MB ROMs that exceed what the 3DS native GBA hardware can handle — they will crash or show a gray X on the home menu. Use a GBA emulator like mGBA (via RetroArch) on your 3DS instead for video ROMs.</p>
+      <p><strong>ROM size.</strong> Standard GBA ROMs up to <strong>32 MB</strong> (the original hardware cart limit) are supported — Pokemon Unbound and other large ROM hacks work. Some ROM hacks exceed 32 MB and are hit-or-miss on AGB_FIRM.</p>
+      <p><strong>GBA Video carts</strong> (Pokemon Video, Disney Video, etc.) use a proprietary Majesco codec. Not every volume has been verified on 3DS AGB_FIRM — if yours crashes or shows a gray X, try mGBA via RetroArch as a fallback.</p>
     </div>
   </details>
 
@@ -455,8 +456,8 @@ select { cursor: pointer; }
           <div class="upload-label">Drop a .gba ROM here</div>
           <div class="upload-file" id="rom-file"></div>
         </div>
-        <span class="field-hint">The GBA game file. Usually 8–16MB. <strong style="color:#f85149">GBA Video ROMs (32MB) are not supported</strong> — they exceed the 3DS native GBA hardware limits.</span>
-        <div id="rom-warning" style="display:none;background:#3b1e1e;color:#f85149;padding:8px 12px;border-radius:6px;margin-top:6px;font-size:13px;"></div>
+        <span class="field-hint">The GBA game file, typically 4–32 MB. Standard ROMs up to 32 MB work. GBA Video carts use a proprietary codec that may not boot under AGB_FIRM.</span>
+        <div id="rom-warning" style="display:none;background:#3b2a1e;color:#f0a055;border:1px solid #f0a05544;padding:8px 12px;border-radius:6px;margin-top:6px;font-size:13px;"></div>
       </div>
 
       <div class="upload-row">
@@ -636,16 +637,15 @@ setupUpload('rom-input', 'rom-zone', 'rom-file', 'binary', (file, data) => {
   document.getElementById('meta-rom').textContent = `${file.name} (${sizeMB} MB)`
 
   const warn = document.getElementById('rom-warning')
-  const nameLC = file.name.toLowerCase()
   const isVideo = /video|gba.?vid/i.test(file.name)
-  if (file.size > 16 * 1024 * 1024 || isVideo) {
+  if (isVideo) {
     warn.style.display = ''
-    if (isVideo) {
-      warn.textContent = 'This looks like a GBA Video ROM. Video ROMs are not compatible with the 3DS GBA hardware (AGB_FIRM) and will crash or show a gray X. Use mGBA via RetroArch on your 3DS instead.'
-    } else {
-      warn.textContent = `This ROM is ${sizeMB} MB — ROMs over 16MB may not work with the 3DS GBA hardware. GBA Video carts (32MB) are known to be incompatible.`
-    }
-    track('rom_warning', { size: file.size, name: file.name, isVideo })
+    warn.textContent = 'Heads up — this looks like a GBA Video cart. Not every Majesco volume has been verified on 3DS AGB_FIRM. If yours shows a gray X, try mGBA via RetroArch as a fallback.'
+    track('rom_warning', { size: file.size, name: file.name, isVideo: true })
+  } else if (file.size > 32 * 1024 * 1024) {
+    warn.style.display = ''
+    warn.textContent = `Heads up — this ROM is ${sizeMB} MB, larger than the 32 MB GBA cart limit. Some oversized ROM hacks run fine under AGB_FIRM, others show a gray X. Build will proceed regardless.`
+    track('rom_warning', { size: file.size, name: file.name, isVideo: false })
   } else {
     warn.style.display = 'none'
   }
