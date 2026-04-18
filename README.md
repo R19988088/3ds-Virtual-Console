@@ -6,6 +6,8 @@
 
 > *Bake your own GBA Virtual Console titles for the Nintendo 3DS. CLI tool, no donor required, no Wine, no Docker.*
 
+> Don't want to install anything? There's also a **web version** at **[vcoven.com](https://vcoven.com)** — same build pipeline behind a Cloud Run backend, with optional QR-code install for FBI. Handy for one-off builds or non-Mac/Linux users. (Still alpha; see the banner.)
+
 ## Supported platforms
 
 | Platform | v0.1 status |
@@ -369,6 +371,10 @@ You bring your own ROMs. vcoven does not distribute or facilitate the download o
 - [ ] **RSF-based scratch build** — eliminate the donor template entirely by constructing the NCCH from scratch with `makerom`'s RSF format
 
 ---
+
+## Changelog
+
+See [`CHANGELOG.md`](CHANGELOG.md) for notable changes to the CLI and web stack.
 
 ## Acknowledgments
 
