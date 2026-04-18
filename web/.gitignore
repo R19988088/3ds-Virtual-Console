@@ -1,0 +1,15 @@
+# Firebase local hosting/emulator cache
+.firebase/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# macOS
+.DS_Store
+
+# Local env / secrets (should never exist but safety net)
+.env
+.env.*
+*-service-account.json
