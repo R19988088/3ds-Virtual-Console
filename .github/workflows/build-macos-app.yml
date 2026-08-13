@@ -2,6 +2,11 @@ name: Build vcoven macOS app
 
 on:
   workflow_dispatch:
+    inputs:
+      fba_run_id:
+        description: "成功的 FBA 工作流运行号；留空则使用最近一次成功运行"
+        required: false
+        type: string
   push:
     paths:
       - "Sources/**"
@@ -19,6 +24,22 @@ jobs:
     steps:
       - name: Check out vcoven
         uses: actions/checkout@v4
+
+      - name: Download FBA launcher
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FBA_RUN_ID: ${{ inputs.fba_run_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          run_id="$FBA_RUN_ID"
+          if [ -z "$run_id" ]; then
+            run_id="$(gh run list --workflow build-fba2012.yml --branch main --status success --limit 1 --json databaseId --jq '.[0].databaseId')"
+          fi
+          test -n "$run_id"
+          mkdir -p Sources/VcovenApp/Resources/arcade
+          gh run download "$run_id" --name fba2012-crc-ignore-arm --dir Sources/VcovenApp/Resources/arcade
+          test -s Sources/VcovenApp/Resources/arcade/fba2012_3ds.elf
 
       - name: Test
         run: swift test

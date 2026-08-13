@@ -33,7 +33,7 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
     <key>CFBundleTypeName</key><string>Supported ROM</string>
     <key>CFBundleTypeRole</key><string>Editor</string>
     <key>LSHandlerRank</key><string>Alternate</string>
-    <key>CFBundleTypeExtensions</key><array><string>gba</string><string>sfc</string><string>smc</string></array>
+  <key>CFBundleTypeExtensions</key><array><string>gba</string><string>sfc</string><string>smc</string><string>zip</string></array>
   </dict></array>
 </dict></plist>
 PLIST

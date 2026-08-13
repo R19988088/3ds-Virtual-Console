@@ -22,7 +22,7 @@ struct BuildIdentity: Sendable {
     static func acceptedROMs(from urls: [URL]) -> [URL] {
         var seen = Set<String>()
         return urls.filter { url in
-            guard ["gba", "sfc", "smc"].contains(url.pathExtension.lowercased()) else { return false }
+            guard ["gba", "sfc", "smc", "zip"].contains(url.pathExtension.lowercased()) else { return false }
             return seen.insert(url.standardizedFileURL.path).inserted
         }
     }

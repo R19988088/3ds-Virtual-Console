@@ -4,6 +4,7 @@ import Foundation
 enum ROMPlatform: String, Sendable {
     case gba = "GBA"
     case snes = "SNES"
+    case arcade = "街机（FBA）"
 }
 
 enum SaveType: String, CaseIterable, Identifiable, Sendable {
@@ -51,12 +52,13 @@ struct BuildConfiguration: Identifiable, Sendable {
 
     init(romURL: URL) {
         self.romURL = romURL
-        platform = romURL.pathExtension.lowercased() == "gba" ? .gba : .snes
+        let ext = romURL.pathExtension.lowercased()
+        platform = ext == "gba" ? .gba : (ext == "zip" ? .arcade : .snes)
         let identity = BuildIdentity(for: romURL)
         title = identity.title
         longTitle = identity.title
         titleID = Self.randomTitleID()
-        productCode = platform == .gba ? identity.productCode : "CTR-N-SNES"
+        productCode = platform == .gba ? identity.productCode : (platform == .arcade ? "CTR-N-FBA1" : "CTR-N-SNES")
     }
 
     var outputURL: URL { romURL.deletingPathExtension().appendingPathExtension("cia") }

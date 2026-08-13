@@ -47,6 +47,10 @@ struct VcovenConverter: Sendable {
             try buildSNES(configuration, iconURL: iconURL, bannerURL: bannerURL, work: work)
             return
         }
+        if configuration.platform == .arcade {
+            try buildArcade(configuration, iconURL: iconURL, bannerURL: bannerURL, work: work)
+            return
+        }
 
         let rom = try Data(contentsOf: configuration.romURL)
         let config = try resource("config_block.bin")
@@ -128,6 +132,46 @@ struct VcovenConverter: Sendable {
                             "-banner", bannerBIN.path, "-elf", resources.appendingPathComponent("snes/snes9x_3ds.elf").path,
                             "-DAPP_TITLE=\(configuration.title)", "-DAPP_PRODUCT_CODE=\(configuration.productCode)",
                             "-DAPP_UNIQUE_ID=0x\(uniqueID)", "-DAPP_ROMFS=\(romfs.path)"])
+    }
+
+    private func buildArcade(_ configuration: BuildConfiguration, iconURL: URL,
+                             bannerURL: URL, work: URL) throws {
+        let fm = FileManager.default
+        let runtime = resources.appendingPathComponent("arcade/fba2012_3ds.elf")
+        let rsf = work.appendingPathComponent("arcade.rsf")
+        guard fm.isReadableFile(atPath: runtime.path) else { throw ConversionError.invalidResource("街机 FBA 核心") }
+        let baseRSF = resources.appendingPathComponent("snes/custom.rsf")
+        guard let rsfText = try? String(contentsOf: baseRSF, encoding: .utf8) else { throw ConversionError.invalidResource("街机 RSF") }
+        let arcadeRSF = rsfText
+            .replacingOccurrences(of: "SystemMode                    : 64MB", with: "SystemMode                    : 80MB")
+            .replacingOccurrences(of: "SystemModeExt                 : Legacy", with: "SystemModeExt                 : 124MB")
+        try arcadeRSF.data(using: .utf8)!.write(to: rsf)
+
+        let romfs = work.appendingPathComponent("romfs")
+        let content = romfs.appendingPathComponent("content")
+        try fm.createDirectory(at: content, withIntermediateDirectories: true)
+        try fm.copyItem(at: configuration.romURL, to: content.appendingPathComponent(configuration.romURL.lastPathComponent))
+
+        let iconPNG = work.appendingPathComponent("icon.png")
+        try normalizedPNG(from: iconURL, width: 48, height: 48, crop: true).write(to: iconPNG)
+        let iconBIN = work.appendingPathComponent("icon.bin")
+        try run("bannertool", ["makesmdh", "-s", configuration.title,
+                                "-l", configuration.longTitle.isEmpty ? configuration.title : configuration.longTitle,
+                                "-p", configuration.publisher, "-i", iconPNG.path, "-o", iconBIN.path])
+
+        let bannerPNG = work.appendingPathComponent("banner.png")
+        try normalizedPNG(from: bannerURL, width: 256, height: 128, crop: false).write(to: bannerPNG)
+        let bannerBIN = work.appendingPathComponent("banner.bin")
+        try silentWAV().write(to: work.appendingPathComponent("banner.wav"))
+        try run("bannertool", ["makebanner", "-i", bannerPNG.path, "-a", work.appendingPathComponent("banner.wav").path, "-o", bannerBIN.path])
+
+        let uniqueID = String(configuration.titleID.dropFirst(8).dropLast(2))
+        if fm.fileExists(atPath: configuration.outputURL.path) { try fm.removeItem(at: configuration.outputURL) }
+        try run("makerom", ["-f", "cia", "-target", "t", "-rsf", rsf.path,
+                             "-o", configuration.outputURL.path, "-exefslogo", "-icon", iconBIN.path,
+                             "-banner", bannerBIN.path, "-elf", runtime.path,
+                             "-DAPP_TITLE=\(configuration.title)", "-DAPP_PRODUCT_CODE=\(configuration.productCode)",
+                             "-DAPP_UNIQUE_ID=0x\(uniqueID)", "-DAPP_ROMFS=\(romfs.path)"])
     }
 
     private func resource(_ name: String) throws -> Data {

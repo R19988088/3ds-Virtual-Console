@@ -39,7 +39,7 @@ struct ContentView: View {
                 }
             }
 
-            uploadZone(title: "ROM", subtitle: "拖入 .gba / .sfc / .smc 文件", icon: "gamecontroller", url: model.selected?.romURL, kind: .rom)
+            uploadZone(title: "ROM", subtitle: "拖入 .gba / .sfc / .smc / .zip 文件", icon: "gamecontroller", url: model.selected?.romURL, kind: .rom)
 
             HStack(alignment: .top, spacing: 14) {
                 uploadZone(title: "图标", subtitle: "可选，留空时按标题生成", icon: "photo", url: model.selected?.iconURL, kind: .icon)

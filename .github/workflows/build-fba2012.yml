@@ -37,13 +37,39 @@ jobs:
           FBA_OUTPUT: ${{ github.workspace }}/core-runtime/dist/fba2012
         run: core-runtime/scripts/build-fba2012.sh
 
-      - name: Inspect artifact
+      - name: Inspect core artifact
         shell: bash
         run: |
           set -euo pipefail
           test -s core-runtime/dist/fba2012/runtime.a
           test "$(wc -c < core-runtime/dist/fba2012/runtime.a)" -gt 1024
-          sha256sum core-runtime/dist/fba2012/runtime.a > core-runtime/dist/fba2012/SHA256SUMS
+
+      - name: Check out RetroArch 3DS frontend
+        shell: bash
+        run: |
+          git clone --no-checkout https://github.com/libretro/RetroArch.git work/RetroArch
+          git -C work/RetroArch fetch --depth 1 origin f3d2eedbfc58908d2c60cec9ed40e95c653cf261
+          git -C work/RetroArch checkout --detach f3d2eedbfc58908d2c60cec9ed40e95c653cf261
+
+      - name: Apply vcoven frontend patch
+        run: git -C work/RetroArch apply --check --whitespace=error core-runtime/retroarch-vcoven.patch
+
+      - name: Build complete FBA launcher
+        env:
+          RETROARCH_SOURCE: ${{ github.workspace }}/work/RetroArch
+          FBA_CORE: ${{ github.workspace }}/core-runtime/dist/fba2012/runtime.a
+          FBA_OUTPUT: ${{ github.workspace }}/core-runtime/dist/fba2012
+        run: core-runtime/scripts/build-retroarch-fba.sh
+
+      - name: Verify complete launcher artifact
+        run: |
+          set -euo pipefail
+          test -s core-runtime/dist/fba2012/fba2012_3ds.elf
+          test -s core-runtime/dist/fba2012/retroarch-fba-template.cia
+          sha256sum core-runtime/dist/fba2012/fba2012_3ds.elf >> core-runtime/dist/fba2012/SHA256SUMS
+
+      - name: Write artifact checksums
+        run: sha256sum core-runtime/dist/fba2012/* > core-runtime/dist/fba2012/SHA256SUMS
 
       - name: Upload FBA core artifact
         uses: actions/upload-artifact@v4
