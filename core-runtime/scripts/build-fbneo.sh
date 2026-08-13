@@ -32,7 +32,7 @@ make -C "$BUILD/src/burner/libretro" -f Makefile \
     clean platform=ctr SUBSET=all >/dev/null 2>&1 || true
 make -C "$BUILD/src/burner/libretro" -f Makefile -j"$JOBS" \
     platform=ctr SUBSET=all REGEN_HEADERS=1 \
-    CFLAGS='-fomit-frame-pointer -O3 -ffunction-sections -fdata-sections' \
+    CFLAGS='-fomit-frame-pointer -O3 -ffunction-sections -fdata-sections -DIOAPI_NO_64' \
     CXXFLAGS='-fomit-frame-pointer -O3 -ffunction-sections -fdata-sections -fno-rtti -fno-exceptions'
 
 CORE="$BUILD/src/burner/libretro/fbneo_all_libretro_ctr.a"
