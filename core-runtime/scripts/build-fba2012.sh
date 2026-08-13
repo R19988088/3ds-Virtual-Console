@@ -22,9 +22,8 @@ if [ "$(git -C "$SOURCE" rev-parse HEAD)" != "$EXPECTED_COMMIT" ]; then
 fi
 
 rm -rf "$BUILD"
-mkdir -p "$(dirname "$BUILD")" "$OUTPUT"
-git -C "$SOURCE" archive --format=tar HEAD | tar -xf - -C "$(dirname "$BUILD")"
-mv "$(dirname "$BUILD")/svn-current" "$BUILD"
+mkdir -p "$BUILD" "$OUTPUT"
+git -C "$SOURCE" archive --format=tar HEAD | tar -xf - -C "$BUILD"
 
 git -C "$BUILD" apply --whitespace=error "$PATCH"
 git -C "$BUILD" diff --check
