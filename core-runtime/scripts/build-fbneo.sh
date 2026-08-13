@@ -21,6 +21,9 @@ for tool in arm-none-eabi-g++ arm-none-eabi-strip arm-none-eabi-readelf; do
     }
 done
 test -d "$RETROARCH"
+git config --global --add safe.directory "$ROOT"
+git config --global --add safe.directory "$SOURCE"
+git config --global --add safe.directory "$RETROARCH"
 
 rm -rf "$BUILD" "$OUTPUT"
 mkdir -p "$BUILD" "$OUTPUT"
@@ -31,7 +34,7 @@ git -C "$SOURCE" archive --format=tar HEAD | tar -xf - -C "$BUILD"
 make -C "$BUILD/src/burner/libretro" -f Makefile \
     clean platform=ctr SUBSET=all >/dev/null 2>&1 || true
 make -C "$BUILD/src/burner/libretro" -f Makefile -j"$JOBS" \
-    platform=ctr SUBSET=all REGEN_HEADERS=1 \
+    platform=ctr SUBSET=all REGEN_HEADERS=1 INCLUDE_CHD_SUPPORT=0 \
     CFLAGS='-fomit-frame-pointer -O3 -ffunction-sections -fdata-sections -DIOAPI_NO_64' \
     CXXFLAGS='-fomit-frame-pointer -O3 -ffunction-sections -fdata-sections -fno-rtti -fno-exceptions'
 
