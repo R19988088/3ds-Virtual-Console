@@ -38,8 +38,10 @@ GitHub Actions 会生成可直接下载的 macOS arm64 DMG：
 - 在对应运行记录的 Artifacts 下载 `vcoven-macOS-arm64`，挂载 DMG 后将 App 拖入应用程序
 
 FBNeo 核心使用 `libretro/FBNeo` 源码重新编译为 3DS `armv6k` 静态核心，
-通过同一个 CIA 支持街机及其家用机驱动。ROM ZIP 仍需符合 FBNeo 对应版本的
-文件名、大小、CRC 和 BIOS/父集要求。
+再由 vcoven 自己的 `libctru` launcher 提供视频、音频、输入、RomFS 直启和存档，
+不依赖 RetroArch 运行时。`beiklive/GBAStation` 的核心拆分和 FBNeo 驱动接入方式
+作为参考，Switch 的 `.nro` 平台层不直接复用到 3DS。ROM ZIP 仍需符合 FBNeo 对应
+版本的文件名、大小、CRC 和 BIOS/父集要求。
 
 `3dstool` 可用以下命令从上游源码重新编译：
 

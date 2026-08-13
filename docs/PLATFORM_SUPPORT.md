@@ -14,12 +14,17 @@ a unique CIA.
 | Mega Drive / Genesis | [PicoDrive 3DS](https://github.com/bubble2k16/emus3ds) or RetroArch `picodrive` / `genesis_plus_gx` | `.smd`, `.gen`, `.bin`, `.rom` | Add an embedded-ROM startup path; define SRAM/save-state paths; verify Old/New 3DS performance |
 | Game Gear | RetroArch `gearsystem` or `genesis_plus_gx` | `.gg` | Build a dedicated core ELF; add direct boot; verify mapper and save behavior |
 | Neo Geo Pocket / Color | RetroArch `mednafen_ngp` or `race` | `.ngp`, `.ngc` | Build a dedicated core ELF; add direct boot and persistent saves |
-| Arcade and supported consoles | One FBNeo core | Usually `.zip`; filenames alone do not identify hardware | Preserve ZIP; validate the matching ROM-set; handle parent/BIOS sets; verify per-system memory requirements |
+| Arcade and supported consoles | One FBNeo core plus vcoven `libctru` launcher | Usually `.zip`; filenames alone do not identify hardware | Preserve ZIP; validate the matching ROM-set; handle parent/BIOS sets; verify per-system memory requirements |
 
 FBNeo's libretro core includes the Sega, NEC, SNK and computer drivers listed
 in its own DAT files. vcoven uses one FBNeo core in its user-facing pipeline;
 the exact ROM-set, BIOS and parent archive remain part of validation and do not
 need separate platform choices in the UI.
+
+The 3DS runtime is intentionally separate from the Switch frontend in
+`beiklive/GBAStation`: its `.nro` and `devkitA64/libnx` platform code cannot be
+linked into a 3DS CIA. vcoven reuses the FBNeo libretro static library and owns
+the 3DS `libctru` launcher boundary in `core-runtime/launcher-3ds`.
 
 PicoDrive 3DS documents good Mega Drive support on Old 3DS, with reduced audio
 rate, while 32X is intended for New 3DS. Its released application opens ROMs

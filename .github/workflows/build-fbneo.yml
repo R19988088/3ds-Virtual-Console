@@ -31,18 +31,10 @@ jobs:
       - name: Verify build contract
         run: core-runtime/tests/verify-fbneo-contract.sh
 
-      - name: Check out RetroArch 3DS frontend
-        shell: bash
-        run: |
-          git clone --no-checkout https://github.com/libretro/RetroArch.git work/RetroArch
-          git -C work/RetroArch fetch --depth 1 origin f3d2eedbfc58908d2c60cec9ed40e95c653cf261
-          git -C work/RetroArch checkout --detach f3d2eedbfc58908d2c60cec9ed40e95c653cf261
-
-      - name: Build FBNeo 3DS launcher
+      - name: Build self-hosted FBNeo 3DS launcher
         env:
           FBNEO_SOURCE: ${{ github.workspace }}/work/FBNeo
           FBNEO_OUTPUT: ${{ github.workspace }}/core-runtime/dist/fbneo
-          RETROARCH_SOURCE: ${{ github.workspace }}/work/RetroArch
         run: core-runtime/scripts/build-fbneo.sh
 
       - name: Check launcher artifact
@@ -56,7 +48,6 @@ jobs:
           printf '%s\n' "$header" | grep -Eq '^ *Data:[[:space:]]+2.s complement, little endian$'
           printf '%s\n' "$header" | grep -Eq '^ *Machine:[[:space:]]+ARM$'
           printf '%s\n' "$header" | grep -Eq '^ *Flags:[[:space:]]+0x05000000, Version5 EABI'
-          test -s core-runtime/dist/fbneo/retroarch-fbneo-template.cia
           sha256sum core-runtime/dist/fbneo/* > core-runtime/dist/fbneo/SHA256SUMS
 
       - name: Upload FBNeo artifact

@@ -10,6 +10,8 @@ licenses and notices continue to apply to their respective components.
 | `makerom` | [3DSGuy/Project_CTR](https://github.com/3DSGuy/Project_CTR) | BSD-2-Clause |
 | `3dstool` | [dnasdw/3dstool](https://github.com/dnasdw/3dstool) | MIT |
 | `bannertool` | [carstene1ns/3ds-bannertool](https://github.com/carstene1ns/3ds-bannertool), forked from Steveice10/bannertool | MIT |
+| FBNeo static core | [libretro/FBNeo](https://github.com/libretro/FBNeo) | See upstream license and notices |
+| GBAStation architecture reference | [beiklive/GBAStation](https://github.com/beiklive/GBAStation) | MIT; reference only, Switch `.nro` is not bundled |
 
 The repository contains structural resources needed to assemble a CIA, but no
 commercial ROM, BIOS, game artwork, or game audio.
