@@ -6,7 +6,7 @@ struct VcovenApp: App {
         WindowGroup {
             ContentView()
         }
-        .windowStyle(.titleBar)
+        .windowStyle(.hiddenTitleBar)
         .defaultSize(width: 640, height: 500)
     }
 }
