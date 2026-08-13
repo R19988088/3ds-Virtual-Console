@@ -25,6 +25,22 @@ import Testing
     #expect(first.productCode.range(of: #"^CTR-N-[0-9A-F]{4}$"#, options: .regularExpression) != nil)
 }
 
+@Test func editableConfigurationValidatesAndRandomizesTitleID() {
+    let rom = URL(fileURLWithPath: "/Games/Advance Wars.gba")
+    var configuration = BuildConfiguration(romURL: rom)
+    let original = configuration.titleID
+
+    #expect(configuration.validationMessage == "请选择 48×48 图标")
+    configuration.iconURL = URL(fileURLWithPath: "/tmp/icon.png")
+    #expect(configuration.validationMessage == "请选择 256×128 横幅")
+    configuration.bannerURL = URL(fileURLWithPath: "/tmp/banner.png")
+    #expect(configuration.validationMessage == nil)
+
+    configuration.randomizeTitleID()
+    #expect(configuration.titleID != original)
+    #expect(configuration.titleID.range(of: #"^000400000F[0-9A-F]{6}$"#, options: .regularExpression) != nil)
+}
+
 @Test func buildsCIAEndToEnd() throws {
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("vcoven-test-\(UUID().uuidString)")

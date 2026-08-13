@@ -2,9 +2,10 @@
 
 ## macOS drag-and-drop app
 
-The native SwiftUI app accepts one or more `.gba` files and writes each `.cia`
-next to its source ROM. Titles come from filenames; stable title IDs and product
-codes are derived automatically. It bundles no Python runtime or Pillow.
+The native SwiftUI app accepts one or more `.gba` files, 48×48 icon art, and
+256×128 banner art. Its two-column editor provides live 3DS previews plus title,
+publisher, title ID, product code, and save-type controls. Each `.cia` is written
+next to its source ROM. It bundles no Python runtime, Pillow, or Rosetta-only tool.
 
 ```bash
 ./scripts/build-macos-app.sh
@@ -14,6 +15,14 @@ open dist/vcoven.app
 The conversion core remains portable. The current SwiftUI shell targets macOS;
 Windows and Linux need their own small UI shell plus platform builds of
 `makerom` and `3dstool`.
+
+The bundled `3dstool` is compiled from the upstream v1.2.6 source as native
+Apple Silicon code with OpenSSL linked statically. Rebuild it with:
+
+```bash
+brew install cmake openssl@3
+./scripts/build-3dstool-arm64.sh
+```
 
 <p align="center">
   <img src="assets/logo.png" alt="vcoven logo" width="280" />
