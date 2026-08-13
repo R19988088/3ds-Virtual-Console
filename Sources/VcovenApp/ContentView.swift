@@ -42,7 +42,7 @@ struct ContentView: View {
             uploadZone(title: "ROM", subtitle: "拖入 .gba / .sfc / .smc 文件", icon: "gamecontroller", url: model.selected?.romURL, kind: .rom)
 
             HStack(alignment: .top, spacing: 14) {
-                uploadZone(title: "图标", subtitle: "48×48 PNG", icon: "photo", url: model.selected?.iconURL, kind: .icon)
+                uploadZone(title: "图标", subtitle: "可选，留空时按标题生成", icon: "photo", url: model.selected?.iconURL, kind: .icon)
                 uploadZone(title: "横幅", subtitle: "256×128 PNG", icon: "photo.on.rectangle", url: model.selected?.bannerURL, kind: .banner)
             }
 
@@ -87,7 +87,7 @@ struct ContentView: View {
             ZStack {
                 LinearGradient(colors: [Color(red: 0.08, green: 0.13, blue: 0.26), Color(red: 0.10, green: 0.10, blue: 0.18)], startPoint: .top, endPoint: .bottom)
                 VStack(spacing: 10) {
-                    image(model.selected?.iconURL, fit: .fill)
+                    iconPreview
                         .frame(width: 72, height: 72).clipShape(RoundedRectangle(cornerRadius: 12)).overlay(RoundedRectangle(cornerRadius: 12).stroke(.white.opacity(0.24), lineWidth: 2))
                     Text(model.selected?.title.isEmpty == false ? model.selected!.title : "Your Game")
                         .foregroundStyle(.white.opacity(0.82)).lineLimit(1)
@@ -156,6 +156,16 @@ struct ContentView: View {
 
     private func image(_ url: URL?, fit: ContentMode) -> some View {
         Group { if let url, let nsImage = NSImage(contentsOf: url) { Image(nsImage: nsImage).resizable().aspectRatio(contentMode: fit) } else { Image(systemName: "questionmark").foregroundStyle(.secondary) } }
+    }
+    @ViewBuilder private var iconPreview: some View {
+        if let url = model.selected?.iconURL, let nsImage = NSImage(contentsOf: url) {
+            Image(nsImage: nsImage).resizable().aspectRatio(contentMode: .fill)
+        } else if let data = try? ArtworkGenerator.textIconPNG(title: model.selected?.title ?? ""),
+                  let nsImage = NSImage(data: data) {
+            Image(nsImage: nsImage).resizable().interpolation(.none).aspectRatio(contentMode: .fill)
+        } else {
+            Image(systemName: "questionmark").foregroundStyle(.secondary)
+        }
     }
     private func meta(_ key: String, _ value: String) -> some View { HStack(alignment: .top) { Text("\(key)：").foregroundStyle(.secondary); Text(value).foregroundStyle(.purple).textSelection(.enabled) } }
 

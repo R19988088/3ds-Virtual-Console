@@ -1,15 +1,10 @@
-# Donor CIA — your personal dump, not for redistribution
-donor/*.cia
-donor/cxi/
-donor/file.*
-
-# Built injects — contain user ROMs
-output/*.cia
-
-# User ROMs and saves
+# User ROMs, saves and generated CIAs
 *.gba
+*.sfc
+*.smc
 *.nds
 *.sav
+*.cia
 
 # Build artifacts
 build/
@@ -20,22 +15,8 @@ __pycache__/
 *.pyc
 .DS_Store
 
-# Tool binaries — too large, fetched per-platform via the homebrew formula
-tools/makerom
-tools/ctrtool
-tools/3dstool
-tools/bannertool_bin
-
-# vcoven user data dir for testing
-.vcoven_data/
-
-# Local debugging corpora — test ROM/CIA sets and user-uploaded images kept
-# for manual repro. Never pushed; excluded even if they contain no .gba/.nds
-# (which the earlier rules already cover on a per-file basis).
+# Local test data
 test-roms/
 test-cias/
 test-cia(working)/
 used-images/
-
-# template/ IS committed — it's the bundled permission template that makes
-# vcoven self-contained. See LICENSE for legal notes.

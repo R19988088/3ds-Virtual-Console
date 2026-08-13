@@ -25,19 +25,23 @@ struct VcovenConverter: Sendable {
 
     func build(_ identity: BuildIdentity) throws {
         var configuration = BuildConfiguration(romURL: identity.romURL)
-        configuration.iconURL = resources.appendingPathComponent("default-icon.png")
         configuration.bannerURL = resources.appendingPathComponent("default-banner.png")
         try build(configuration)
     }
 
     func build(_ configuration: BuildConfiguration) throws {
-        guard let iconURL = configuration.iconURL, let bannerURL = configuration.bannerURL else {
-            throw ConversionError.invalidResource("图标或横幅")
-        }
+        guard let bannerURL = configuration.bannerURL else { throw ConversionError.invalidResource("横幅") }
         let fm = FileManager.default
         let work = fm.temporaryDirectory.appendingPathComponent("vcoven-\(UUID().uuidString)")
         try fm.createDirectory(at: work, withIntermediateDirectories: true)
         defer { try? fm.removeItem(at: work) }
+        let iconURL: URL
+        if let selected = configuration.iconURL {
+            iconURL = selected
+        } else {
+            iconURL = work.appendingPathComponent("generated-icon.png")
+            try ArtworkGenerator.textIconPNG(title: configuration.title).write(to: iconURL)
+        }
 
         if configuration.platform == .snes {
             try buildSNES(configuration, iconURL: iconURL, bannerURL: bannerURL, work: work)

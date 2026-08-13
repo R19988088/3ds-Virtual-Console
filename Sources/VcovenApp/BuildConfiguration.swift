@@ -66,7 +66,6 @@ struct BuildConfiguration: Identifiable, Sendable {
     }
 
     var validationMessage: String? {
-        if iconURL == nil { return "请选择 48×48 图标" }
         if bannerURL == nil { return "请选择 256×128 横幅" }
         if title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return "请输入标题" }
         if titleID.range(of: #"^000400000F[0-9A-Fa-f]{4}00$"#, options: .regularExpression) == nil { return "Title ID 格式应为 000400000FXXXX00" }

@@ -30,10 +30,10 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
   <key>LSMinimumSystemVersion</key><string>13.0</string>
   <key>NSHighResolutionCapable</key><true/>
   <key>CFBundleDocumentTypes</key><array><dict>
-    <key>CFBundleTypeName</key><string>Game Boy Advance ROM</string>
+    <key>CFBundleTypeName</key><string>Supported ROM</string>
     <key>CFBundleTypeRole</key><string>Editor</string>
     <key>LSHandlerRank</key><string>Alternate</string>
-    <key>CFBundleTypeExtensions</key><array><string>gba</string></array>
+    <key>CFBundleTypeExtensions</key><array><string>gba</string><string>sfc</string><string>smc</string></array>
   </dict></array>
 </dict></plist>
 PLIST

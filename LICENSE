@@ -19,27 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----
-
-This project includes prebuilt binaries from third-party tools, each subject
-to their own licenses:
-
-- makerom, ctrtool: BSD 2-Clause (3DSGuy/Project_CTR)
-- 3dstool:           MIT (dnasdw/3dstool)
-- bannertool:        MIT (carstene1ns/3ds-bannertool, fork of Steveice10/bannertool)
-
-The bundled `template/` directory contains a small set of structural bytes
-(~41 KB total) extracted from a Game Boy Advance Virtual Console title's
-NCCH headers. These bytes are used as a permission template so that custom
-GBA injects can launch on a hacked 3DS via Luma3DS's signature bypass. No
-game-specific content (ROM data, game icon art, game banner art, audio, or
-game text) is included.
-
-The bundle does include `logo.darc.lz` (8 KB) — the standardized "GAME BOY
-ADVANCE" boot animation that plays when launching any GBA VC title. This
-file is required by the AGB_FIRM launcher; without it, titles will not boot.
-We include it so injects feel native to the GBA experience.
-
-If you are a copyright holder and believe any of these bytes should not be
-included, please open an issue.

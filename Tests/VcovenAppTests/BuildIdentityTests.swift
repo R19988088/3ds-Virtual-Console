@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import Testing
 @testable import VcovenApp
@@ -37,8 +38,6 @@ import Testing
     var configuration = BuildConfiguration(romURL: rom)
     let original = configuration.titleID
 
-    #expect(configuration.validationMessage == "请选择 48×48 图标")
-    configuration.iconURL = URL(fileURLWithPath: "/tmp/icon.png")
     #expect(configuration.validationMessage == "请选择 256×128 横幅")
     configuration.bannerURL = URL(fileURLWithPath: "/tmp/banner.png")
     #expect(configuration.validationMessage == nil)
@@ -46,6 +45,14 @@ import Testing
     configuration.randomizeTitleID()
     #expect(configuration.titleID != original)
     #expect(configuration.titleID.range(of: #"^000400000F[0-9A-F]{4}00$"#, options: .regularExpression) != nil)
+}
+
+@Test func generatesExactDefaultTextIcon() throws {
+    let png = try ArtworkGenerator.textIconPNG(title: "龙珠大冒险", side: 48)
+    let image = try #require(NSBitmapImageRep(data: png))
+    #expect(image.pixelsWide == 48)
+    #expect(image.pixelsHigh == 48)
+    #expect(png.count > 500)
 }
 
 @Test func buildsCIAEndToEnd() throws {
@@ -75,7 +82,6 @@ import Testing
     let romURL = directory.appendingPathComponent("Test Game.sfc")
     try Data(repeating: 0, count: 1024 * 1024).write(to: romURL)
     var configuration = BuildConfiguration(romURL: romURL)
-    configuration.iconURL = Bundle.module.url(forResource: "default-icon", withExtension: "png", subdirectory: "Resources")
     configuration.bannerURL = Bundle.module.url(forResource: "default-banner", withExtension: "png", subdirectory: "Resources")
     try VcovenConverter().build(configuration)
 
