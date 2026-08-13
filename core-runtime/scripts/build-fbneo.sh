@@ -9,10 +9,10 @@ EXPECTED_COMMIT="${FBNEO_COMMIT:-2fcb2628fbfd529806e75f3559a9d82758c8a5cc}"
 DEVKITARM_ROOT="${DEVKITARM:-/opt/devkitpro/devkitARM}"
 STRIP="$DEVKITARM_ROOT/bin/arm-none-eabi-strip"
 AR="$DEVKITARM_ROOT/bin/arm-none-eabi-ar"
-# FBNeo's all-driver target has a high peak memory footprint.  The container
-# can report the host's CPU count, so use a conservative default and allow CI
-# or local builds to override it explicitly.
-JOBS="${JOBS:-2}"
+# FBNeo's all-driver target has a high peak memory footprint. Keep the default
+# serial so a failed object compile cannot be hidden by a sibling job; callers
+# may opt into parallelism with JOBS after measuring the container limit.
+JOBS="${JOBS:-1}"
 
 test -d "$SOURCE/.git"
 test "$(git -C "$SOURCE" rev-parse HEAD)" = "$EXPECTED_COMMIT"
@@ -52,7 +52,8 @@ env \
     CFLAGS='-DIOAPI_NO_64' \
     CXXFLAGS='-include wchar.h' \
     make -C "$BUILD/src/burner/libretro" \
-    -f Makefile -f "$ROOT/core-runtime/scripts/fbneo-no-archive.mk" -j"$JOBS" \
+    -f Makefile -f "$ROOT/core-runtime/scripts/fbneo-no-archive.mk" \
+    --output-sync=target -j"$JOBS" \
     platform=ctr SUBSET=all REGEN_HEADERS=1 INCLUDE_CHD_SUPPORT=0 SPLIT_UP_LINK=1 \
     fbneo_objects
 (cd "$BUILD/src/burner/libretro" && "$AR" rcs "$CORE" "${OBJECTS[@]}")
