@@ -8,7 +8,10 @@ OUTPUT="${FBNEO_OUTPUT:-$ROOT/core-runtime/dist/fbneo}"
 EXPECTED_COMMIT="${FBNEO_COMMIT:-2fcb2628fbfd529806e75f3559a9d82758c8a5cc}"
 DEVKITARM_ROOT="${DEVKITARM:-/opt/devkitpro/devkitARM}"
 STRIP="$DEVKITARM_ROOT/bin/arm-none-eabi-strip"
-JOBS="${JOBS:-$(getconf _NPROCESSORS_ONLN 2>/dev/null || printf 2)}"
+# FBNeo's all-driver target has a high peak memory footprint.  The container
+# can report the host's CPU count, so use a conservative default and allow CI
+# or local builds to override it explicitly.
+JOBS="${JOBS:-2}"
 
 test -d "$SOURCE/.git"
 test "$(git -C "$SOURCE" rev-parse HEAD)" = "$EXPECTED_COMMIT"
