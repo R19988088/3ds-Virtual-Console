@@ -15,6 +15,7 @@ jobs:
     runs-on: ubuntu-22.04
     container:
       image: devkitpro/devkitarm:latest
+      options: --user root
     steps:
       - name: Check out vcoven
         uses: actions/checkout@v4
@@ -53,8 +54,7 @@ jobs:
 
       - name: Apply vcoven frontend patch
         run: |
-          git show HEAD:core-runtime/retroarch-vcoven.patch > /tmp/retroarch-vcoven.patch
-          git -C work/RetroArch apply --check --whitespace=error /tmp/retroarch-vcoven.patch
+          git -C "$GITHUB_WORKSPACE/work/RetroArch" apply --check --whitespace=error "$GITHUB_WORKSPACE/core-runtime/retroarch-vcoven.patch"
 
       - name: Build complete FBA launcher
         env:
