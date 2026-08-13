@@ -23,11 +23,41 @@ ARCH='-march=armv6k -mtune=mpcore -mfloat-abi=hard -marm -mfpu=vfp -mtp=soft'
 COMMON="-D__3DS__ -D__LIBRETRO__ -ffunction-sections -fdata-sections -fomit-frame-pointer -O3"
 INCLUDES="-I$SOURCE/src/burner/libretro/libretro-common/include -I$SOURCE/src/burner/libretro -I$SOURCE/src -I$DEVKITPRO_ROOT/libctru/include"
 
+COMMON_SOURCES=(
+    file/file_path.c
+    file/file_path_io.c
+    file/retro_dirent.c
+    encodings/encoding_utf.c
+    compat/compat_posix_string.c
+    compat/compat_strcasestr.c
+    compat/compat_strl.c
+    compat/compat_strldup.c
+    compat/fopen_utf8.c
+    string/stdstring.c
+    streams/file_stream.c
+    streams/file_stream_transforms.c
+    features/features_cpu.c
+    file/config_file.c
+    file/config_file_userdata.c
+    lists/string_list.c
+    memmap/memalign.c
+    time/rtime.c
+    vfs/vfs_implementation.c
+)
+
 "$CC" $ARCH $COMMON $INCLUDES -std=gnu11 -c \
     "$ROOT/core-runtime/launcher-3ds/fbneo_launcher.c" -o "$BUILD/fbneo_launcher.o"
 
+COMMON_OBJECTS=()
+for source_file in "${COMMON_SOURCES[@]}"; do
+    object_file="$BUILD/$(basename "${source_file%.c}").o"
+    "$CC" $ARCH $COMMON $INCLUDES -std=gnu11 -c \
+        "$SOURCE/src/burner/libretro/libretro-common/$source_file" -o "$object_file"
+    COMMON_OBJECTS+=("$object_file")
+done
+
 "$CXX" $ARCH -specs=3dsx.specs -Wl,--gc-sections \
-    "$BUILD/fbneo_launcher.o" "$CORE" \
+    "$BUILD/fbneo_launcher.o" "${COMMON_OBJECTS[@]}" "$CORE" \
     -L"$DEVKITPRO_ROOT/libctru/lib" -lctru -lm -o "$OUTPUT"
 
 "$DEVKITARM_ROOT/bin/arm-none-eabi-strip" --strip-debug "$OUTPUT"

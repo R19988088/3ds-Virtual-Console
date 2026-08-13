@@ -33,6 +33,8 @@ if grep -q 'RetroArch' "$LAUNCHER_BUILD"; then
 fi
 grep -q -- '--strip-debug' "$LAUNCHER_BUILD"
 grep -q 'arm-none-eabi-readelf' "$LAUNCHER_BUILD"
+grep -q 'vfs/vfs_implementation.c' "$LAUNCHER_BUILD"
+grep -q 'streams/file_stream.c' "$LAUNCHER_BUILD"
 grep -q 'Class:' "$SCRIPT"
 grep -q '16 \* 1024 \* 1024' "$SCRIPT"
 grep -q '2fcb2628fbfd529806e75f3559a9d82758c8a5cc' "$SCRIPT"
