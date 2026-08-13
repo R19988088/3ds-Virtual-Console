@@ -12,8 +12,7 @@ swift build -c release
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BUILD/VcovenApp" "$APP/Contents/MacOS/vcoven"
-cp -R "$BUILD/VcovenApp_VcovenApp.bundle" "$APP/Contents/Resources/"
-cp "$ROOT/Sources/VcovenApp/Resources/AppIcon.icns" "$APP/Contents/Resources/AppIcon.icns"
+cp -R "$BUILD/VcovenApp_VcovenApp.bundle/Resources/." "$APP/Contents/Resources/"
 
 cat > "$APP/Contents/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
@@ -39,5 +38,6 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
 PLIST
 
 codesign --force --deep --sign - "$APP"
-ditto -c -k --keepParent "$APP" "$DEST/vcoven-macOS.zip"
-du -sh "$APP" "$DEST/vcoven-macOS.zip"
+test -f "$APP/Contents/Resources/config_block.bin"
+hdiutil create -volname "vcoven" -srcfolder "$APP" -ov -format UDZO "$DEST/vcoven-macOS.dmg"
+du -sh "$APP" "$DEST/vcoven-macOS.dmg"

@@ -17,10 +17,24 @@ enum ConversionError: LocalizedError {
 struct VcovenConverter: Sendable {
     private let resources: URL
 
-    init(resources: URL = Bundle.module.resourceURL!) {
+    init(resources: URL? = nil) {
+        let resources = resources ?? Self.defaultResourceURL()
         let nested = resources.appendingPathComponent("Resources")
         self.resources = FileManager.default.fileExists(atPath: nested.appendingPathComponent("config_block.bin").path)
             ? nested : resources
+    }
+
+    private static func defaultResourceURL() -> URL {
+        let fileManager = FileManager.default
+        let candidates = [Bundle.main.resourceURL,
+                          Bundle.main.bundleURL.appendingPathComponent("Contents/Resources")]
+            .compactMap { $0 }
+        if let resourceURL = candidates.first(where: {
+            fileManager.fileExists(atPath: $0.appendingPathComponent("config_block.bin").path)
+        }) {
+            return resourceURL
+        }
+        return Bundle.module.resourceURL ?? fileManager.temporaryDirectory
     }
 
     func build(_ identity: BuildIdentity) throws {

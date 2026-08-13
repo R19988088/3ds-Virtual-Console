@@ -48,15 +48,17 @@ jobs:
         run: ./scripts/build-macos-app.sh dist
 
       - name: Verify app bundle
+        shell: bash
         run: |
           set -euo pipefail
           test -x dist/vcoven.app/Contents/MacOS/vcoven
-          test -s dist/vcoven-macOS.zip
+          test -f dist/vcoven.app/Contents/Resources/config_block.bin
+          test -s dist/vcoven-macOS.dmg
           codesign --verify --deep --strict dist/vcoven.app
 
       - name: Upload app
         uses: actions/upload-artifact@v4
         with:
           name: vcoven-macOS-arm64
-          path: dist/vcoven-macOS.zip
+          path: dist/vcoven-macOS.dmg
           if-no-files-found: error
