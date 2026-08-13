@@ -33,10 +33,11 @@ git -C "$SOURCE" archive --format=tar HEAD | tar -xf - -C "$BUILD"
 # supplies its pinned source tree and the platform-specific build flags.
 make -C "$BUILD/src/burner/libretro" -f Makefile \
     clean platform=ctr SUBSET=all >/dev/null 2>&1 || true
-make -C "$BUILD/src/burner/libretro" -f Makefile -j"$JOBS" \
-    platform=ctr SUBSET=all REGEN_HEADERS=1 INCLUDE_CHD_SUPPORT=0 \
-    CFLAGS='-fomit-frame-pointer -O3 -ffunction-sections -fdata-sections -DIOAPI_NO_64' \
-    CXXFLAGS='-fomit-frame-pointer -O3 -ffunction-sections -fdata-sections -fno-rtti -fno-exceptions -include wchar.h'
+env \
+    CFLAGS='-DIOAPI_NO_64' \
+    CXXFLAGS='-include wchar.h' \
+    make -C "$BUILD/src/burner/libretro" -f Makefile -j"$JOBS" \
+    platform=ctr SUBSET=all REGEN_HEADERS=1 INCLUDE_CHD_SUPPORT=0
 
 CORE="$BUILD/src/burner/libretro/fbneo_all_libretro_ctr.a"
 test -s "$CORE"
