@@ -11,6 +11,13 @@ test -s "$CORE"
 cp "$CORE" "$RETROARCH/libretro_ctr.a"
 PATCH_FILE="${VCOVEN_RETROARCH_PATCH:-$ROOT/core-runtime/retroarch-vcoven.patch}"
 git -C "$RETROARCH" apply --whitespace=error "$PATCH_FILE"
+
+# Recent devkitPro images keep picasso/bin2s in the shared tools package,
+# while older RetroArch makefiles default to DEVKITARM/bin.
+if [ -z "${DEVKITTOOLS:-}" ] && [ -x "${DEVKITPRO:-/opt/devkitpro}/tools/bin/picasso" ]; then
+    export DEVKITTOOLS="${DEVKITPRO:-/opt/devkitpro}/tools"
+fi
+
 rm -rf "$RETROARCH/vcoven-romfs"
 mkdir -p "$RETROARCH/vcoven-romfs/content"
 printf '%s\n' 'placeholder' > "$RETROARCH/vcoven-romfs/content/game.zip"
