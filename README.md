@@ -32,6 +32,15 @@ open dist/vcoven.app
 
 生成的应用和压缩包位于 `dist/`。应用无需 Python、Pillow 或 Rosetta。
 
+GitHub Actions 会生成可直接下载的 macOS arm64 App：
+
+- 工作流：[Build vcoven macOS app](https://github.com/R19988088/vcoven-GBA-Virtual-Console-/actions/workflows/build-macos-app.yml)
+- 在对应运行记录的 Artifacts 下载 `vcoven-macOS-arm64`
+
+当前可直接使用的 App 路线是 GBA 和 SNES。FBA 2012 目前已能在 GitHub 生成
+ARM 静态核心，但还没有完成 3DS 前端/启动器和 CIA 集成，因此不能称为可用的
+街机 App；FBA 集成完成后会加入同一 App 工作流。
+
 `3dstool` 可用以下命令从上游源码重新编译：
 
 ```bash

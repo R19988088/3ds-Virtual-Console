@@ -16,6 +16,8 @@ test -s "$ROOT/.github/workflows/build-fba2012.yml"
 grep -q '0ce31536bef3162fe7e69ff5f555334ec4913cef' "$ROOT/.github/workflows/build-fba2012.yml"
 grep -q 'core-runtime/scripts/build-fba2012.sh' "$ROOT/.github/workflows/build-fba2012.yml"
 grep -q 'devkitpro/devkitarm:latest' "$ROOT/.github/workflows/build-fba2012.yml"
+test -s "$ROOT/.github/workflows/build-macos-app.yml"
+grep -q 'scripts/build-macos-app.sh' "$ROOT/.github/workflows/build-macos-app.yml"
 
 if grep -q '^+.*return true;' "$PATCH"; then
     printf '%s\n' 'unexpected unconditional success in CRC patch' >&2

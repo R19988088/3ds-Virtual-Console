@@ -1,0 +1,41 @@
+name: Build vcoven macOS app
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "Sources/**"
+      - "Tests/**"
+      - "Package.swift"
+      - "scripts/build-macos-app.sh"
+      - ".github/workflows/build-macos-app.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - name: Check out vcoven
+        uses: actions/checkout@v4
+
+      - name: Test
+        run: swift test
+
+      - name: Build app
+        run: ./scripts/build-macos-app.sh dist
+
+      - name: Verify app bundle
+        run: |
+          set -euo pipefail
+          test -x dist/vcoven.app/Contents/MacOS/vcoven
+          test -s dist/vcoven-macOS.zip
+          codesign --verify --deep --strict dist/vcoven.app
+
+      - name: Upload app
+        uses: actions/upload-artifact@v4
+        with:
+          name: vcoven-macOS-arm64
+          path: dist/vcoven-macOS.zip
+          if-no-files-found: error
