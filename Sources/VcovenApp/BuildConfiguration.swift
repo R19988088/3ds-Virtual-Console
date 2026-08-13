@@ -4,7 +4,7 @@ import Foundation
 enum ROMPlatform: String, Sendable {
     case gba = "GBA"
     case snes = "SNES"
-    case arcade = "街机（FBA）"
+    case arcade = "街机 / 家用机（FBNeo）"
 }
 
 enum SaveType: String, CaseIterable, Identifiable, Sendable {
@@ -58,7 +58,7 @@ struct BuildConfiguration: Identifiable, Sendable {
         title = identity.title
         longTitle = identity.title
         titleID = Self.randomTitleID()
-        productCode = platform == .gba ? identity.productCode : (platform == .arcade ? "CTR-N-FBA1" : "CTR-N-SNES")
+        productCode = platform == .gba ? identity.productCode : (platform == .arcade ? "CTR-N-FBN1" : "CTR-N-SNES")
     }
 
     var outputURL: URL { romURL.deletingPathExtension().appendingPathExtension("cia") }

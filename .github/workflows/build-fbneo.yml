@@ -1,0 +1,67 @@
+name: Build FBNeo 3DS core
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "core-runtime/**"
+      - ".github/workflows/build-fbneo.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    container:
+      image: devkitpro/devkitarm:latest
+      options: --user root
+    steps:
+      - name: Check out vcoven
+        uses: actions/checkout@v4
+
+      - name: Check out pinned FBNeo source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --no-checkout https://github.com/libretro/FBNeo.git work/FBNeo
+          git -C work/FBNeo fetch --depth 1 origin 2fcb2628fbfd529806e75f3559a9d82758c8a5cc
+          git -C work/FBNeo checkout --detach 2fcb2628fbfd529806e75f3559a9d82758c8a5cc
+
+      - name: Verify build contract
+        run: core-runtime/tests/verify-fbneo-contract.sh
+
+      - name: Check out RetroArch 3DS frontend
+        shell: bash
+        run: |
+          git clone --no-checkout https://github.com/libretro/RetroArch.git work/RetroArch
+          git -C work/RetroArch fetch --depth 1 origin f3d2eedbfc58908d2c60cec9ed40e95c653cf261
+          git -C work/RetroArch checkout --detach f3d2eedbfc58908d2c60cec9ed40e95c653cf261
+
+      - name: Build FBNeo 3DS launcher
+        env:
+          FBNEO_SOURCE: ${{ github.workspace }}/work/FBNeo
+          FBNEO_OUTPUT: ${{ github.workspace }}/core-runtime/dist/fbneo
+          RETROARCH_SOURCE: ${{ github.workspace }}/work/RetroArch
+        run: core-runtime/scripts/build-fbneo.sh
+
+      - name: Check launcher artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s core-runtime/dist/fbneo/fbneo_3ds.elf
+          test "$(wc -c < core-runtime/dist/fbneo/fbneo_3ds.elf)" -lt $((16 * 1024 * 1024))
+          header="$(arm-none-eabi-readelf -h core-runtime/dist/fbneo/fbneo_3ds.elf)"
+          printf '%s\n' "$header" | grep -Eq '^ *Class:[[:space:]]+ELF32$'
+          printf '%s\n' "$header" | grep -Eq '^ *Data:[[:space:]]+2.s complement, little endian$'
+          printf '%s\n' "$header" | grep -Eq '^ *Machine:[[:space:]]+ARM$'
+          printf '%s\n' "$header" | grep -Eq '^ *Flags:[[:space:]]+0x05000000, Version5 EABI'
+          test -s core-runtime/dist/fbneo/retroarch-fbneo-template.cia
+          sha256sum core-runtime/dist/fbneo/* > core-runtime/dist/fbneo/SHA256SUMS
+
+      - name: Upload FBNeo artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fbneo-3ds
+          path: core-runtime/dist/fbneo
+          if-no-files-found: error

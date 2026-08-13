@@ -6,7 +6,7 @@
 
 ## 功能
 
-- 同时拖入多个 `.gba`、`.sfc`、`.smc` ROM，逐个编辑并输出 CIA
+- 同时拖入多个 `.gba`、`.sfc`、`.smc`、`.zip` ROM，逐个编辑并输出 CIA
 - 左侧输入，右侧实时预览
 - 可拖入或选择图标、横幅，输入标题、发布者和 Title ID
 - 图标输入会自动裁切并缩放为 SMDH 所需的 24x24 与 48x48
@@ -37,9 +37,9 @@ GitHub Actions 会生成可直接下载的 macOS arm64 DMG：
 - 工作流：[Build vcoven macOS app](https://github.com/R19988088/vcoven-GBA-Virtual-Console-/actions/workflows/build-macos-app.yml)
 - 在对应运行记录的 Artifacts 下载 `vcoven-macOS-arm64`，挂载 DMG 后将 App 拖入应用程序
 
-当前可直接使用的 App 路线是 GBA 和 SNES。FBA 2012 目前已能在 GitHub 生成
-ARM 静态核心，但还没有完成 3DS 前端/启动器和 CIA 集成，因此不能称为可用的
-街机 App；FBA 集成完成后会加入同一 App 工作流。
+FBNeo 核心使用 `libretro/FBNeo` 源码重新编译为 3DS `armv6k` 静态核心，
+通过同一个 CIA 支持街机及其家用机驱动。ROM ZIP 仍需符合 FBNeo 对应版本的
+文件名、大小、CRC 和 BIOS/父集要求。
 
 `3dstool` 可用以下命令从上游源码重新编译：
 

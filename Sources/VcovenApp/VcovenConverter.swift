@@ -151,9 +151,9 @@ struct VcovenConverter: Sendable {
     private func buildArcade(_ configuration: BuildConfiguration, iconURL: URL,
                              bannerURL: URL, work: URL) throws {
         let fm = FileManager.default
-        let runtime = resources.appendingPathComponent("arcade/fba2012_3ds.elf")
+        let runtime = resources.appendingPathComponent("arcade/fbneo_3ds.elf")
         let rsf = work.appendingPathComponent("arcade.rsf")
-        guard fm.isReadableFile(atPath: runtime.path) else { throw ConversionError.invalidResource("街机 FBA 核心") }
+        guard fm.isReadableFile(atPath: runtime.path) else { throw ConversionError.invalidResource("FBNeo 核心") }
         let baseRSF = resources.appendingPathComponent("snes/custom.rsf")
         guard let rsfText = try? String(contentsOf: baseRSF, encoding: .utf8) else { throw ConversionError.invalidResource("街机 RSF") }
         let arcadeRSF = rsfText

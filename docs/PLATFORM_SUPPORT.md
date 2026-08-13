@@ -14,13 +14,12 @@ a unique CIA.
 | Mega Drive / Genesis | [PicoDrive 3DS](https://github.com/bubble2k16/emus3ds) or RetroArch `picodrive` / `genesis_plus_gx` | `.smd`, `.gen`, `.bin`, `.rom` | Add an embedded-ROM startup path; define SRAM/save-state paths; verify Old/New 3DS performance |
 | Game Gear | RetroArch `gearsystem` or `genesis_plus_gx` | `.gg` | Build a dedicated core ELF; add direct boot; verify mapper and save behavior |
 | Neo Geo Pocket / Color | RetroArch `mednafen_ngp` or `race` | `.ngp`, `.ngc` | Build a dedicated core ELF; add direct boot and persistent saves |
-| Arcade | One FBA core | Usually `.zip`; filenames alone do not identify hardware | Preserve ZIP; validate the matching ROM-set; handle parent/BIOS sets; verify per-system memory requirements |
+| Arcade and supported consoles | One FBNeo core | Usually `.zip`; filenames alone do not identify hardware | Preserve ZIP; validate the matching ROM-set; handle parent/BIOS sets; verify per-system memory requirements |
 
-RetroArch's official 3DS build definitions explicitly list `picodrive`,
-`genesis_plus_gx`, `gearsystem`, `mednafen_ngp`, `race`, and FBA variants.
-vcoven only needs one general FBA core in its user-facing pipeline. CPS and
-Neo Geo remain compatibility categories used to validate ROM-set, BIOS and
-memory requirements; they do not need separate platform choices in the UI.
+FBNeo's libretro core includes the Sega, NEC, SNK and computer drivers listed
+in its own DAT files. vcoven uses one FBNeo core in its user-facing pipeline;
+the exact ROM-set, BIOS and parent archive remain part of validation and do not
+need separate platform choices in the UI.
 
 PicoDrive 3DS documents good Mega Drive support on Old 3DS, with reduced audio
 rate, while 32X is intended for New 3DS. Its released application opens ROMs
@@ -35,7 +34,7 @@ ROM startup instead of wrapping the existing CIA unchanged.
 2. **GG:** reuse the proven injection contract with a small Gearsystem or
    Genesis Plus GX core.
 3. **NGP/NGC:** apply the same contract to Mednafen NGP or RACE.
-4. **Arcade:** use one FBA core and automatically validate its matching ROM-set,
+4. **Arcade and FBNeo consoles:** use one FBNeo core and automatically validate its matching ROM-set,
    required BIOS/parent archives and hardware memory requirements.
 
 Each stage is complete only after install, cold boot, input, audio, suspend,

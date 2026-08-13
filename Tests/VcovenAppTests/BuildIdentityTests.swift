@@ -26,7 +26,7 @@ func testAcceptsArcadeZipROM() {
     let url = URL(fileURLWithPath: "/tmp/Street Fighter.zip")
     XCTAssertEqual(BuildIdentity.acceptedROMs(from: [url]), [url])
     XCTAssertEqual(BuildConfiguration(romURL: url).platform, .arcade)
-    XCTAssertEqual(BuildConfiguration(romURL: url).productCode, "CTR-N-FBA1")
+    XCTAssertEqual(BuildConfiguration(romURL: url).productCode, "CTR-N-FBN1")
 }
 
 func testDerivesStableMetadataAndAdjacentOutput() {

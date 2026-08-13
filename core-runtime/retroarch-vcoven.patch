@@ -1,5 +1,5 @@
 diff --git a/Makefile.ctr b/Makefile.ctr
-index b182ecf..a9e948e 100644
+index b182ecf..382781a 100644
 --- a/Makefile.ctr
 +++ b/Makefile.ctr
 @@ -27,6 +27,12 @@ APP_SYSTEM_MODE_EXT  = 124MB
@@ -15,7 +15,7 @@ index b182ecf..a9e948e 100644
  include pkg/ctr/Makefile.cores
  
  OBJ :=
-@@ -154,6 +159,10 @@ MAKEROM_ARGS_COMMON = -rsf $(APP_RSF) -exefslogo -elf $(TARGET).elf -icon $(TARG
+@@ -154,6 +160,10 @@ MAKEROM_ARGS_COMMON = -rsf $(APP_RSF) -exefslogo -elf $(TARGET).elf -icon $(TARG
  	-DAPP_SYSTEM_MODE=$(APP_SYSTEM_MODE) -DAPP_SYSTEM_MODE_EXT=$(APP_SYSTEM_MODE_EXT) \
  	-major "$(APP_VERSION_MAJOR)" -minor "$(APP_VERSION_MINOR)" -micro "$(APP_VERSION_MICRO)"
  
@@ -27,20 +27,21 @@ index b182ecf..a9e948e 100644
  LIBDIRS := -L. -L$(CTRULIB)/lib
  
 diff --git a/ctr/ctr_system.c b/ctr/ctr_system.c
-index e310489..0e79f10 100644
+index e310489..6b8774b 100644
 --- a/ctr/ctr_system.c
 +++ b/ctr/ctr_system.c
-@@ -5,6 +5,9 @@
+@@ -5,6 +5,10 @@
  #include <unistd.h>
  #include <string.h>
  #include <stdlib.h>
 +#ifdef VCOVEN_ARCADE_ROMFS
++#include <3ds/romfs.h>
 +#include <dirent.h>
 +#endif
  #include "ctr_debug.h"
  
  #define CTR_APPMEMALLOC_PTR ((u32*)0x1FF80040)
-@@ -235,9 +238,29 @@ void __system_initArgv(void)
+@@ -235,9 +239,32 @@ void __system_initArgv(void)
     }
     else
     {
@@ -48,11 +49,14 @@ index e310489..0e79f10 100644
 +      DIR *dir = opendir("romfs:/content");
 +      struct dirent *entry;
 +      char *content = NULL;
-+      if (dir && (entry = readdir(dir)))
++      while (dir && (entry = readdir(dir)))
 +      {
++         if (!strcmp(entry->d_name, ".") || !strcmp(entry->d_name, ".."))
++            continue;
 +         size_t length = strlen(entry->d_name) + sizeof("romfs:/content/");
 +         content = (char*)malloc(length);
 +         snprintf(content, length, "romfs:/content/%s", entry->d_name);
++         break;
 +      }
 +      if (dir)
 +         closedir(dir);
@@ -70,38 +74,23 @@ index e310489..0e79f10 100644
     }
     __system_argv[__system_argc] = NULL;
  }
-diff --git a/frontend/drivers/platform_ctr.c b/frontend/drivers/platform_ctr.c
-index a7a3d51..9a1a411 100644
---- a/frontend/drivers/platform_ctr.c
-+++ b/frontend/drivers/platform_ctr.c
-@@ -29,6 +29,10 @@
- #include <3ds/services/ptmu.h>
- #include <3ds/services/mcuhwc.h>
+@@ -249,6 +276,9 @@ void initSystem(void (*retAddr)(void))
  
-+#ifdef VCOVEN_ARCADE_ROMFS
-+#include <3ds/romfs.h>
-+#endif
-+
- #include <file/file_path.h>
- #include <string/stdstring.h>
- 
-@@ -153,6 +157,9 @@ u8* gfxBottomFramebuffers[2];
- 
- static void frontend_ctr_deinit(void* data)
- {
-+#ifdef VCOVEN_ARCADE_ROMFS
-+   romfsExit();
-+#endif
-    Handle lcd_handle;
-    u32 parallax_layer_reg_state;
-    u8 not_2DS;
-@@ -412,6 +419,9 @@ PrintConsole* ctrConsole;
- 
- static void frontend_ctr_init(void* data)
- {
+    __libctru_init(retAddr);
+    __appInit();
 +#ifdef VCOVEN_ARCADE_ROMFS
 +   romfsInit();
 +#endif
- #ifndef IS_SALAMANDER
-    extern audio_driver_t audio_null;
- 
+    __system_initArgv();
+    __libc_init_array();
+ }
+@@ -256,6 +286,9 @@ void initSystem(void (*retAddr)(void))
+ void __attribute__((noreturn)) __ctru_exit(int rc)
+ {
+    __libc_fini_array();
++#ifdef VCOVEN_ARCADE_ROMFS
++   romfsExit();
++#endif
+    __appExit();
+    asm ("mov sp, %[saved_stack] \n\t" : : [saved_stack] "r" (__saved_stack));
+    __libctru_exit(rc);
