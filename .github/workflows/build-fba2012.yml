@@ -52,7 +52,9 @@ jobs:
           git -C work/RetroArch checkout --detach f3d2eedbfc58908d2c60cec9ed40e95c653cf261
 
       - name: Apply vcoven frontend patch
-        run: git -C work/RetroArch apply --check --whitespace=error "${{ github.workspace }}/core-runtime/retroarch-vcoven.patch"
+        run: |
+          git show HEAD:core-runtime/retroarch-vcoven.patch > /tmp/retroarch-vcoven.patch
+          git -C work/RetroArch apply --check --whitespace=error /tmp/retroarch-vcoven.patch
 
       - name: Build complete FBA launcher
         env:
