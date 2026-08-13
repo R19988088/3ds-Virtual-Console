@@ -33,21 +33,23 @@ git -C "$SOURCE" archive --format=tar HEAD | tar -xf - -C "$BUILD"
 # supplies its pinned source tree and the platform-specific build flags.
 make -C "$BUILD/src/burner/libretro" -f Makefile \
     clean platform=ctr SUBSET=all >/dev/null 2>&1 || true
+CORE="$BUILD/src/burner/libretro/fbneo_all_libretro_ctr.a"
+OBJECTS_LINE=$(make -C "$BUILD/src/burner/libretro" -f Makefile -pn -n \
+    platform=ctr SUBSET=all REGEN_HEADERS=1 INCLUDE_CHD_SUPPORT=0 SPLIT_UP_LINK=1 \
+    | sed -n 's/^OBJS := //p')
+read -r -a OBJECTS <<< "$OBJECTS_LINE"
+test "${#OBJECTS[@]}" -gt 0
+# Avoid FBNeo's 1102-command archive recipe entirely. Build the generated
+# headers and object goals, then create the static archive below.
+make -C "$BUILD/src/burner/libretro" -f Makefile \
+    platform=ctr SUBSET=all REGEN_HEADERS=1 INCLUDE_CHD_SUPPORT=0 SPLIT_UP_LINK=1 \
+    generate-files
 env \
     CFLAGS='-DIOAPI_NO_64' \
     CXXFLAGS='-include wchar.h' \
     make -C "$BUILD/src/burner/libretro" -f Makefile -j"$JOBS" \
-    platform=ctr SUBSET=all REGEN_HEADERS=1 INCLUDE_CHD_SUPPORT=0 SPLIT_UP_LINK=1 AR=:
-
-CORE="$BUILD/src/burner/libretro/fbneo_all_libretro_ctr.a"
-# GNU Make 3.81's split archive recipe can return 1 after all objects were
-# compiled. Let Make build the dependencies, suppress that recipe, then use
-# the exact expanded object list to create and inspect the archive here.
-OBJECTS_LINE=$(make -C "$BUILD/src/burner/libretro" -f Makefile -pn -n \
-    platform=ctr SUBSET=all REGEN_HEADERS=1 INCLUDE_CHD_SUPPORT=0 SPLIT_UP_LINK=1 AR=: \
-    | sed -n 's/^OBJS := //p')
-read -r -a OBJECTS <<< "$OBJECTS_LINE"
-test "${#OBJECTS[@]}" -gt 0
+    platform=ctr SUBSET=all REGEN_HEADERS=1 INCLUDE_CHD_SUPPORT=0 SPLIT_UP_LINK=1 \
+    "${OBJECTS[@]}"
 "$AR" rcs "$CORE" "${OBJECTS[@]}"
 test -s "$CORE"
 "$AR" t "$CORE" > "$BUILD/fbneo_archive_members.txt"
