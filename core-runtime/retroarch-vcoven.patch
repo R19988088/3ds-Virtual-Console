@@ -2,7 +2,7 @@ diff --git a/Makefile.ctr b/Makefile.ctr
 index b182ecf..a9e948e 100644
 --- a/Makefile.ctr
 +++ b/Makefile.ctr
-@@ -27,6 +27,11 @@ APP_SYSTEM_MODE_EXT  = 124MB
+@@ -27,6 +27,12 @@ APP_SYSTEM_MODE_EXT  = 124MB
  APP_BIG_TEXT_SECTION = 0
  APP_USE_SVCHAX       = 0
  
