@@ -1,9 +1,10 @@
 import AppKit
 import Foundation
-import Testing
+import XCTest
 @testable import VcovenApp
 
-@Test func acceptsOnlyGBAFilesAndRemovesDuplicates() {
+final class VcovenAppTests: XCTestCase {
+func testAcceptsOnlyGBAFilesAndRemovesDuplicates() {
     let urls = [
         URL(fileURLWithPath: "/tmp/One.gba"),
         URL(fileURLWithPath: "/tmp/readme.txt"),
@@ -11,51 +12,51 @@ import Testing
         URL(fileURLWithPath: "/tmp/One.gba"),
     ]
 
-    #expect(BuildIdentity.acceptedROMs(from: urls).map(\.lastPathComponent) == ["One.gba", "Two.GBA"])
+    XCTAssertEqual(BuildIdentity.acceptedROMs(from: urls).map(\.lastPathComponent), ["One.gba", "Two.GBA"])
 }
 
-@Test func acceptsSupportedGBAAndSNESROMs() {
+func testAcceptsSupportedGBAAndSNESROMs() {
     let urls = ["One.gba", "Two.sfc", "Three.SMC", "readme.txt"].map { URL(fileURLWithPath: "/tmp/\($0)") }
-    #expect(BuildIdentity.acceptedROMs(from: urls).map(\.pathExtension) == ["gba", "sfc", "SMC"])
-    #expect(BuildConfiguration(romURL: urls[0]).platform == .gba)
-    #expect(BuildConfiguration(romURL: urls[1]).platform == .snes)
+    XCTAssertEqual(BuildIdentity.acceptedROMs(from: urls).map(\.pathExtension), ["gba", "sfc", "SMC"])
+    XCTAssertEqual(BuildConfiguration(romURL: urls[0]).platform, .gba)
+    XCTAssertEqual(BuildConfiguration(romURL: urls[1]).platform, .snes)
 }
 
-@Test func derivesStableMetadataAndAdjacentOutput() {
+func testDerivesStableMetadataAndAdjacentOutput() {
     let rom = URL(fileURLWithPath: "/Games/Advance Wars.gba")
     let first = BuildIdentity(for: rom)
     let second = BuildIdentity(for: rom)
 
-    #expect(first.title == "Advance Wars")
-    #expect(first.outputURL.path == "/Games/Advance Wars.cia")
-    #expect(first.titleID == second.titleID)
-    #expect(first.titleID.range(of: #"^000400000F[0-9A-F]{4}00$"#, options: .regularExpression) != nil)
-    #expect(first.productCode.range(of: #"^CTR-N-[0-9A-F]{4}$"#, options: .regularExpression) != nil)
+    XCTAssertEqual(first.title, "Advance Wars")
+    XCTAssertEqual(first.outputURL.path, "/Games/Advance Wars.cia")
+    XCTAssertEqual(first.titleID, second.titleID)
+    XCTAssertNotNil(first.titleID.range(of: #"^000400000F[0-9A-F]{4}00$"#, options: .regularExpression))
+    XCTAssertNotNil(first.productCode.range(of: #"^CTR-N-[0-9A-F]{4}$"#, options: .regularExpression))
 }
 
-@Test func editableConfigurationValidatesAndRandomizesTitleID() {
+func testEditableConfigurationValidatesAndRandomizesTitleID() {
     let rom = URL(fileURLWithPath: "/Games/Advance Wars.gba")
     var configuration = BuildConfiguration(romURL: rom)
     let original = configuration.titleID
 
-    #expect(configuration.validationMessage == "请选择 256×128 横幅")
+    XCTAssertEqual(configuration.validationMessage, "请选择 256×128 横幅")
     configuration.bannerURL = URL(fileURLWithPath: "/tmp/banner.png")
-    #expect(configuration.validationMessage == nil)
+    XCTAssertNil(configuration.validationMessage)
 
     configuration.randomizeTitleID()
-    #expect(configuration.titleID != original)
-    #expect(configuration.titleID.range(of: #"^000400000F[0-9A-F]{4}00$"#, options: .regularExpression) != nil)
+    XCTAssertNotEqual(configuration.titleID, original)
+    XCTAssertNotNil(configuration.titleID.range(of: #"^000400000F[0-9A-F]{4}00$"#, options: .regularExpression))
 }
 
-@Test func generatesExactDefaultTextIcon() throws {
+func testGeneratesExactDefaultTextIcon() throws {
     let png = try ArtworkGenerator.textIconPNG(title: "龙珠大冒险", side: 48)
-    let image = try #require(NSBitmapImageRep(data: png))
-    #expect(image.pixelsWide == 48)
-    #expect(image.pixelsHigh == 48)
-    #expect(png.count > 500)
+    let image = try XCTUnwrap(NSBitmapImageRep(data: png))
+    XCTAssertEqual(image.pixelsWide, 48)
+    XCTAssertEqual(image.pixelsHigh, 48)
+    XCTAssertGreaterThan(png.count, 500)
 }
 
-@Test func buildsCIAEndToEnd() throws {
+func testBuildsCIAEndToEnd() throws {
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("vcoven-test-\(UUID().uuidString)")
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -70,10 +71,10 @@ import Testing
     try VcovenConverter().build(identity)
 
     let attributes = try FileManager.default.attributesOfItem(atPath: identity.outputURL.path)
-    #expect((attributes[.size] as? NSNumber)?.intValue ?? 0 > rom.count)
+    XCTAssertGreaterThan((attributes[.size] as? NSNumber)?.intValue ?? 0, rom.count)
 }
 
-@Test func buildsSNESCIAEndToEnd() throws {
+func testBuildsSNESCIAEndToEnd() throws {
     let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("vcoven-snes-test-\(UUID().uuidString)")
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -86,7 +87,8 @@ import Testing
     try VcovenConverter().build(configuration)
 
     let attributes = try FileManager.default.attributesOfItem(atPath: configuration.outputURL.path)
-    #expect((attributes[.size] as? NSNumber)?.intValue ?? 0 > romURL.fileSize)
+    XCTAssertGreaterThan((attributes[.size] as? NSNumber)?.intValue ?? 0, romURL.fileSize)
+}
 }
 
 private extension URL {
