@@ -50,9 +50,9 @@ env \
     make -C "$BUILD/src/burner/libretro" -f Makefile -j"$JOBS" \
     platform=ctr SUBSET=all REGEN_HEADERS=1 INCLUDE_CHD_SUPPORT=0 SPLIT_UP_LINK=1 \
     "${OBJECTS[@]}"
-"$AR" rcs "$CORE" "${OBJECTS[@]}"
+(cd "$BUILD/src/burner/libretro" && "$AR" rcs "$CORE" "${OBJECTS[@]}")
 test -s "$CORE"
-"$AR" t "$CORE" > "$BUILD/fbneo_archive_members.txt"
+(cd "$BUILD/src/burner/libretro" && "$AR" t "$CORE") > "$BUILD/fbneo_archive_members.txt"
 test "$(wc -l < "$BUILD/fbneo_archive_members.txt")" -eq "${#OBJECTS[@]}"
 grep -Fxq '../../burner/libretro/libretro.o' "$BUILD/fbneo_archive_members.txt"
 grep -Fxq '../../burner/libretro/retro_common.o' "$BUILD/fbneo_archive_members.txt"
