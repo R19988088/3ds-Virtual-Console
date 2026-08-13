@@ -11,6 +11,8 @@ grep -q 'find_rom_by_crc(g_find_list\[i\].ri.nCrc' "$PATCH"
 # The patch only changes ROM mapping; the existing nLen checks remain in the
 # surrounding upstream function and are covered by apply/reverse verification.
 grep -q 'FBA_DEFINES=.*FBA_IGNORE_ROM_CRC=1' "$ROOT/core-runtime/scripts/build-fba2012.sh"
+grep -q 'ARCH_FLAGS=.*mfloat-abi=hard' "$ROOT/core-runtime/scripts/build-fba2012.sh"
+grep -q 'mfpu=vfp' "$ROOT/core-runtime/scripts/build-fba2012.sh"
 grep -q 'EXPECTED_COMMIT=.*0ce31536bef3162fe7e69ff5f555334ec4913cef' "$ROOT/core-runtime/scripts/build-fba2012.sh"
 test -s "$ROOT/.github/workflows/build-fba2012.yml"
 grep -q '0ce31536bef3162fe7e69ff5f555334ec4913cef' "$ROOT/.github/workflows/build-fba2012.yml"
