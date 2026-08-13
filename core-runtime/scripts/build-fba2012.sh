@@ -26,7 +26,6 @@ mkdir -p "$BUILD" "$OUTPUT"
 git -C "$SOURCE" archive --format=tar HEAD | tar -xf - -C "$BUILD"
 
 git -C "$BUILD" apply --whitespace=error "$PATCH"
-git -C "$BUILD" diff --check
 
 make -C "$BUILD/svn-current/trunk" -f makefile.libretro clean \
     platform=ctr target=generic FBA_DEFINES='-DFBA_IGNORE_ROM_CRC=1'
