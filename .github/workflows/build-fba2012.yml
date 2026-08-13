@@ -64,6 +64,7 @@ jobs:
         run: core-runtime/scripts/build-retroarch-fba.sh
 
       - name: Verify complete launcher artifact
+        shell: bash
         run: |
           set -euo pipefail
           test -s core-runtime/dist/fba2012/fba2012_3ds.elf
@@ -71,6 +72,7 @@ jobs:
           sha256sum core-runtime/dist/fba2012/fba2012_3ds.elf >> core-runtime/dist/fba2012/SHA256SUMS
 
       - name: Write artifact checksums
+        shell: bash
         run: sha256sum core-runtime/dist/fba2012/* > core-runtime/dist/fba2012/SHA256SUMS
 
       - name: Upload FBA core artifact
