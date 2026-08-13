@@ -42,7 +42,7 @@ jobs:
         run: |
           set -euo pipefail
           test -s core-runtime/dist/fba2012/runtime.a
-          file core-runtime/dist/fba2012/runtime.a
+          test "$(wc -c < core-runtime/dist/fba2012/runtime.a)" -gt 1024
           sha256sum core-runtime/dist/fba2012/runtime.a > core-runtime/dist/fba2012/SHA256SUMS
 
       - name: Upload FBA core artifact
