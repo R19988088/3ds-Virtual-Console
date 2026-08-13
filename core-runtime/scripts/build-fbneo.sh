@@ -12,6 +12,7 @@ STRIP="$DEVKITARM_ROOT/bin/arm-none-eabi-strip"
 # can report the host's CPU count, so use a conservative default and allow CI
 # or local builds to override it explicitly.
 JOBS="${JOBS:-2}"
+NEWLINE=$'\n'
 
 test -d "$SOURCE/.git"
 test "$(git -C "$SOURCE" rev-parse HEAD)" = "$EXPECTED_COMMIT"
@@ -35,8 +36,9 @@ make -C "$BUILD/src/burner/libretro" -f Makefile \
 env \
     CFLAGS='-DIOAPI_NO_64' \
     CXXFLAGS='-include wchar.h' \
+    "NEWLINE=$NEWLINE" \
     make -C "$BUILD/src/burner/libretro" -f Makefile -j"$JOBS" \
-    platform=ctr SUBSET=all REGEN_HEADERS=1 INCLUDE_CHD_SUPPORT=0
+    platform=ctr SUBSET=all REGEN_HEADERS=1 INCLUDE_CHD_SUPPORT=0 SPLIT_UP_LINK=1
 
 CORE="$BUILD/src/burner/libretro/fbneo_all_libretro_ctr.a"
 test -s "$CORE"
