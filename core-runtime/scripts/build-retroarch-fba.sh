@@ -8,9 +8,13 @@ OUTPUT="${FBA_OUTPUT:-$ROOT/core-runtime/dist/fba2012}"
 
 test -d "$RETROARCH"
 test -s "$CORE"
-cp "$CORE" "$RETROARCH/libretro_ctr.a"
 PATCH_FILE="${VCOVEN_RETROARCH_PATCH:-$ROOT/core-runtime/retroarch-vcoven.patch}"
+if ! git -C "$RETROARCH" apply --check --whitespace=error "$PATCH_FILE"; then
+    printf '%s\n' "RetroArch source already contains the vcoven patch or is not clean: $RETROARCH" >&2
+    exit 1
+fi
 git -C "$RETROARCH" apply --whitespace=error "$PATCH_FILE"
+cp "$CORE" "$RETROARCH/libretro_ctr.a"
 
 # Recent devkitPro images keep picasso/bin2s in the shared tools package,
 # while older RetroArch makefiles default to DEVKITARM/bin.

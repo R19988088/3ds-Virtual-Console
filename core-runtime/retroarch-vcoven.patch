@@ -9,6 +9,7 @@ index b182ecf..a9e948e 100644
 +ifeq ($(VCOVEN_ARCADE_ROMFS),1)
 +APP_ROMFS            ?= $(CURDIR)/vcoven-romfs
 +CFLAGS               += -DVCOVEN_ARCADE_ROMFS
++CFLAGS               += -DUSE_CTRULIB_2
 +endif
 +
  include pkg/ctr/Makefile.cores
