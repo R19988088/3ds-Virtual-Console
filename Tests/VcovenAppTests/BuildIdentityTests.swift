@@ -13,6 +13,13 @@ import Testing
     #expect(BuildIdentity.acceptedROMs(from: urls).map(\.lastPathComponent) == ["One.gba", "Two.GBA"])
 }
 
+@Test func acceptsSupportedGBAAndSNESROMs() {
+    let urls = ["One.gba", "Two.sfc", "Three.SMC", "readme.txt"].map { URL(fileURLWithPath: "/tmp/\($0)") }
+    #expect(BuildIdentity.acceptedROMs(from: urls).map(\.pathExtension) == ["gba", "sfc", "SMC"])
+    #expect(BuildConfiguration(romURL: urls[0]).platform == .gba)
+    #expect(BuildConfiguration(romURL: urls[1]).platform == .snes)
+}
+
 @Test func derivesStableMetadataAndAdjacentOutput() {
     let rom = URL(fileURLWithPath: "/Games/Advance Wars.gba")
     let first = BuildIdentity(for: rom)
@@ -21,7 +28,7 @@ import Testing
     #expect(first.title == "Advance Wars")
     #expect(first.outputURL.path == "/Games/Advance Wars.cia")
     #expect(first.titleID == second.titleID)
-    #expect(first.titleID.range(of: #"^000400000F[0-9A-F]{6}$"#, options: .regularExpression) != nil)
+    #expect(first.titleID.range(of: #"^000400000F[0-9A-F]{4}00$"#, options: .regularExpression) != nil)
     #expect(first.productCode.range(of: #"^CTR-N-[0-9A-F]{4}$"#, options: .regularExpression) != nil)
 }
 
@@ -38,7 +45,7 @@ import Testing
 
     configuration.randomizeTitleID()
     #expect(configuration.titleID != original)
-    #expect(configuration.titleID.range(of: #"^000400000F[0-9A-F]{6}$"#, options: .regularExpression) != nil)
+    #expect(configuration.titleID.range(of: #"^000400000F[0-9A-F]{4}00$"#, options: .regularExpression) != nil)
 }
 
 @Test func buildsCIAEndToEnd() throws {
@@ -57,4 +64,25 @@ import Testing
 
     let attributes = try FileManager.default.attributesOfItem(atPath: identity.outputURL.path)
     #expect((attributes[.size] as? NSNumber)?.intValue ?? 0 > rom.count)
+}
+
+@Test func buildsSNESCIAEndToEnd() throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("vcoven-snes-test-\(UUID().uuidString)")
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+
+    let romURL = directory.appendingPathComponent("Test Game.sfc")
+    try Data(repeating: 0, count: 1024 * 1024).write(to: romURL)
+    var configuration = BuildConfiguration(romURL: romURL)
+    configuration.iconURL = Bundle.module.url(forResource: "default-icon", withExtension: "png", subdirectory: "Resources")
+    configuration.bannerURL = Bundle.module.url(forResource: "default-banner", withExtension: "png", subdirectory: "Resources")
+    try VcovenConverter().build(configuration)
+
+    let attributes = try FileManager.default.attributesOfItem(atPath: configuration.outputURL.path)
+    #expect((attributes[.size] as? NSNumber)?.intValue ?? 0 > romURL.fileSize)
+}
+
+private extension URL {
+    var fileSize: Int { (try? resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0 }
 }

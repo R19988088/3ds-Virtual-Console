@@ -1,6 +1,11 @@
 import CryptoKit
 import Foundation
 
+enum ROMPlatform: String, Sendable {
+    case gba = "GBA"
+    case snes = "SNES"
+}
+
 enum SaveType: String, CaseIterable, Identifiable, Sendable {
     case auto, flash1m, flash512, eeprom8, eeprom64, sram, none
 
@@ -33,6 +38,7 @@ enum SaveType: String, CaseIterable, Identifiable, Sendable {
 struct BuildConfiguration: Identifiable, Sendable {
     let id = UUID()
     let romURL: URL
+    let platform: ROMPlatform
     var iconURL: URL?
     var bannerURL: URL?
     var title: String
@@ -45,11 +51,12 @@ struct BuildConfiguration: Identifiable, Sendable {
 
     init(romURL: URL) {
         self.romURL = romURL
+        platform = romURL.pathExtension.lowercased() == "gba" ? .gba : .snes
         let identity = BuildIdentity(for: romURL)
         title = identity.title
         longTitle = identity.title
         titleID = Self.randomTitleID()
-        productCode = identity.productCode
+        productCode = platform == .gba ? identity.productCode : "CTR-N-SNES"
     }
 
     var outputURL: URL { romURL.deletingPathExtension().appendingPathExtension("cia") }
@@ -62,7 +69,7 @@ struct BuildConfiguration: Identifiable, Sendable {
         if iconURL == nil { return "请选择 48×48 图标" }
         if bannerURL == nil { return "请选择 256×128 横幅" }
         if title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return "请输入标题" }
-        if titleID.range(of: #"^[0-9A-Fa-f]{16}$"#, options: .regularExpression) == nil { return "Title ID 必须是 16 位十六进制" }
+        if titleID.range(of: #"^000400000F[0-9A-Fa-f]{4}00$"#, options: .regularExpression) == nil { return "Title ID 格式应为 000400000FXXXX00" }
         if productCode.range(of: #"^CTR-N-[A-Za-z0-9]{4,10}$"#, options: .regularExpression) == nil { return "产品码格式应为 CTR-N-XXXX" }
         return nil
     }
@@ -72,7 +79,7 @@ struct BuildConfiguration: Identifiable, Sendable {
     }
 
     private static func randomTitleID() -> String {
-        let bytes = (0..<3).map { _ in UInt8.random(in: 0...255) }
-        return "000400000F" + bytes.map { String(format: "%02X", $0) }.joined()
+        let bytes = (0..<2).map { _ in UInt8.random(in: 0...255) }
+        return "000400000F" + bytes.map { String(format: "%02X", $0) }.joined() + "00"
     }
 }

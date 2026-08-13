@@ -39,6 +39,11 @@ struct VcovenConverter: Sendable {
         try fm.createDirectory(at: work, withIntermediateDirectories: true)
         defer { try? fm.removeItem(at: work) }
 
+        if configuration.platform == .snes {
+            try buildSNES(configuration, iconURL: iconURL, bannerURL: bannerURL, work: work)
+            return
+        }
+
         let rom = try Data(contentsOf: configuration.romURL)
         let config = try resource("config_block.bin")
         let code = buildCode(rom: rom, config: config, saveOverride: configuration.saveType.value)
@@ -88,6 +93,37 @@ struct VcovenConverter: Sendable {
         }
         try run("makerom", ["-f", "cia", "-o", configuration.outputURL.path,
                             "-content", "\(cxi.path):0:0", "-ignoresign"])
+    }
+
+    private func buildSNES(_ configuration: BuildConfiguration, iconURL: URL,
+                           bannerURL: URL, work: URL) throws {
+        let fm = FileManager.default
+        let romfs = work.appendingPathComponent("romfs")
+        try fm.createDirectory(at: romfs, withIntermediateDirectories: true)
+        try fm.copyItem(at: configuration.romURL, to: romfs.appendingPathComponent("rom.smc"))
+        try Data((configuration.title + "\n").utf8).write(to: romfs.appendingPathComponent("rom.txt"))
+
+        let iconPNG = work.appendingPathComponent("icon.png")
+        try normalizedPNG(from: iconURL, width: 48, height: 48, crop: true).write(to: iconPNG)
+        let iconBIN = work.appendingPathComponent("icon.bin")
+        try run("bannertool", ["makesmdh", "-s", configuration.title,
+                                "-l", configuration.longTitle.isEmpty ? configuration.title : configuration.longTitle,
+                                "-p", configuration.publisher, "-i", iconPNG.path, "-o", iconBIN.path])
+
+        let bannerBIN = work.appendingPathComponent("banner.bin")
+        let bannerPNG = work.appendingPathComponent("banner.png")
+        try normalizedPNG(from: bannerURL, width: 256, height: 128, crop: false).write(to: bannerPNG)
+        let wavURL = work.appendingPathComponent("banner.wav")
+        try silentWAV().write(to: wavURL)
+        try run("bannertool", ["makebanner", "-i", bannerPNG.path, "-a", wavURL.path, "-o", bannerBIN.path])
+
+        let uniqueID = String(configuration.titleID.dropFirst(8).dropLast(2))
+        if fm.fileExists(atPath: configuration.outputURL.path) { try fm.removeItem(at: configuration.outputURL) }
+        try run("makerom", ["-f", "cia", "-target", "t", "-rsf", resources.appendingPathComponent("snes/custom.rsf").path,
+                            "-o", configuration.outputURL.path, "-exefslogo", "-icon", iconBIN.path,
+                            "-banner", bannerBIN.path, "-elf", resources.appendingPathComponent("snes/snes9x_3ds.elf").path,
+                            "-DAPP_TITLE=\(configuration.title)", "-DAPP_PRODUCT_CODE=\(configuration.productCode)",
+                            "-DAPP_UNIQUE_ID=0x\(uniqueID)", "-DAPP_ROMFS=\(romfs.path)"])
     }
 
     private func resource(_ name: String) throws -> Data {
@@ -170,13 +206,22 @@ struct VcovenConverter: Sendable {
     }
 
     private func swizzledRGB565(_ image: NSImage, side: Int) -> Data {
-        let target = NSImage(size: NSSize(width: side, height: side))
-        target.lockFocus()
-        NSGraphicsContext.current?.imageInterpolation = .high
-        image.draw(in: NSRect(x: 0, y: 0, width: side, height: side), from: .zero,
-                   operation: .copy, fraction: 1, respectFlipped: true, hints: nil)
-        target.unlockFocus()
-        guard let bitmap = NSBitmapImageRep(data: target.tiffRepresentation!) else { return Data() }
+        guard let bitmap = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: side, pixelsHigh: side,
+                                            bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true,
+                                            isPlanar: false, colorSpaceName: .deviceRGB,
+                                            bytesPerRow: 0, bitsPerPixel: 0),
+              let context = NSGraphicsContext(bitmapImageRep: bitmap) else { return Data() }
+        let cropSide = min(image.size.width, image.size.height)
+        let source = NSRect(x: (image.size.width - cropSide) / 2,
+                            y: (image.size.height - cropSide) / 2,
+                            width: cropSide, height: cropSide)
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = context
+        context.imageInterpolation = .high
+        image.draw(in: NSRect(x: 0, y: 0, width: side, height: side), from: source,
+                   operation: .copy, fraction: 1, respectFlipped: false, hints: nil)
+        context.flushGraphics()
+        NSGraphicsContext.restoreGraphicsState()
         let morton = [0,1,4,5,16,17,20,21,2,3,6,7,18,19,22,23,8,9,12,13,24,25,28,29,10,11,14,15,26,27,30,31,32,33,36,37,48,49,52,53,34,35,38,39,50,51,54,55,40,41,44,45,56,57,60,61,42,43,46,47,58,59,62,63]
         var output = Data()
         for tileY in 0..<(side / 8) {
@@ -218,6 +263,39 @@ struct VcovenConverter: Sendable {
         var wav = Data("RIFF".utf8); wav.appendLE(UInt32(36 + 44100)); wav.append(Data("WAVEfmt ".utf8)); wav.appendLE(UInt32(16)); wav.appendLE(UInt16(1)); wav.appendLE(UInt16(1)); wav.appendLE(UInt32(22050)); wav.appendLE(UInt32(44100)); wav.appendLE(UInt16(2)); wav.appendLE(UInt16(16)); wav.append(Data("data".utf8)); wav.appendLE(UInt32(44100)); wav.append(Data(repeating: 0, count: 44100)); try wav.write(to: wavURL)
         try run("bannertool", ["makebanner", "-i", pngURL.path, "-a", wavURL.path, "-o", outputURL.path])
         return try Data(contentsOf: outputURL)
+    }
+
+    private func normalizedPNG(from imageURL: URL, width: Int, height: Int, crop: Bool) throws -> Data {
+        guard let image = NSImage(contentsOf: imageURL),
+              let bitmap = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: width, pixelsHigh: height,
+                                            bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true,
+                                            isPlanar: false, colorSpaceName: .deviceRGB,
+                                            bytesPerRow: 0, bitsPerPixel: 0),
+              let context = NSGraphicsContext(bitmapImageRep: bitmap) else {
+            throw ConversionError.invalidResource(imageURL.lastPathComponent)
+        }
+        NSGraphicsContext.saveGraphicsState(); NSGraphicsContext.current = context
+        NSColor.black.setFill(); NSRect(x: 0, y: 0, width: width, height: height).fill()
+        let targetRatio = CGFloat(width) / CGFloat(height)
+        var source = NSRect(origin: .zero, size: image.size)
+        if crop {
+            if image.size.width / image.size.height > targetRatio {
+                source.size.width = image.size.height * targetRatio; source.origin.x = (image.size.width - source.width) / 2
+            } else {
+                source.size.height = image.size.width / targetRatio; source.origin.y = (image.size.height - source.height) / 2
+            }
+        }
+        let scale = min(CGFloat(width) / source.width, CGFloat(height) / source.height)
+        let drawSize = NSSize(width: source.width * scale, height: source.height * scale)
+        image.draw(in: NSRect(x: (CGFloat(width) - drawSize.width) / 2, y: (CGFloat(height) - drawSize.height) / 2,
+                              width: drawSize.width, height: drawSize.height), from: source,
+                   operation: .copy, fraction: 1, respectFlipped: false, hints: nil)
+        context.flushGraphics(); NSGraphicsContext.restoreGraphicsState()
+        return bitmap.representation(using: .png, properties: [:])!
+    }
+
+    private func silentWAV() -> Data {
+        var wav = Data("RIFF".utf8); wav.appendLE(UInt32(36 + 44100)); wav.append(Data("WAVEfmt ".utf8)); wav.appendLE(UInt32(16)); wav.appendLE(UInt16(1)); wav.appendLE(UInt16(1)); wav.appendLE(UInt32(22050)); wav.appendLE(UInt32(44100)); wav.appendLE(UInt16(2)); wav.appendLE(UInt16(16)); wav.append(Data("data".utf8)); wav.appendLE(UInt32(44100)); wav.append(Data(repeating: 0, count: 44100)); return wav
     }
 
     private func packExeFS(_ files: [(String, Data)]) -> Data {

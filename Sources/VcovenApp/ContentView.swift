@@ -29,7 +29,7 @@ struct ContentView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 3) {
                     Text("vcoven").font(.title.bold())
-                    Text("GBA Virtual Console CIA Builder").foregroundStyle(.secondary)
+                    Text("GBA & SNES CIA Builder").foregroundStyle(.secondary)
                 }
                 Spacer()
                 if model.items.count > 1 {
@@ -39,7 +39,7 @@ struct ContentView: View {
                 }
             }
 
-            uploadZone(title: "GBA ROM", subtitle: "拖入一个或多个 .gba 文件", icon: "gamecontroller", url: model.selected?.romURL, kind: .rom)
+            uploadZone(title: "ROM", subtitle: "拖入 .gba / .sfc / .smc 文件", icon: "gamecontroller", url: model.selected?.romURL, kind: .rom)
 
             HStack(alignment: .top, spacing: 14) {
                 uploadZone(title: "图标", subtitle: "48×48 PNG", icon: "photo", url: model.selected?.iconURL, kind: .icon)
@@ -51,7 +51,7 @@ struct ContentView: View {
                 field("长标题", text: binding(\.longTitle), hint: "选中游戏后显示在下屏")
                 field("发布者", text: binding(\.publisher), hint: "显示在下屏标题下方")
 
-                VStack(alignment: .leading, spacing: 7) {
+                if model.selected?.platform == .gba { VStack(alignment: .leading, spacing: 7) {
                     Text("TITLE ID").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
                     HStack {
                         TextField("000400000F000000", text: binding(\.titleID))
@@ -60,7 +60,7 @@ struct ContentView: View {
                             .help("生成随机 Title ID")
                     }
                     Text("每个游戏必须唯一，点击刷新按钮可重新生成").font(.caption).foregroundStyle(.tertiary)
-                }
+                } }
                 field("产品码", text: binding(\.productCode), hint: "格式：CTR-N-XXXX", monospaced: true)
 
                 VStack(alignment: .leading, spacing: 7) {
@@ -108,7 +108,8 @@ struct ContentView: View {
                 meta("发布者", model.selected?.publisher ?? "Homebrew")
                 meta("Title ID", model.selected?.titleID ?? "—")
                 meta("产品码", model.selected?.productCode ?? "—")
-                meta("存档", model.selected?.saveType.label ?? "自动检测")
+                meta("平台", model.selected?.platform.rawValue ?? "—")
+                if model.selected?.platform == .gba { meta("存档", model.selected?.saveType.label ?? "自动检测") }
                 meta("ROM", model.selected.map { "\($0.romURL.lastPathComponent) (\($0.romSize))" } ?? "—")
             }
             .font(.system(.callout, design: .monospaced)).padding(16).frame(maxWidth: .infinity, alignment: .leading)

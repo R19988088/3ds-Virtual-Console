@@ -2,10 +2,15 @@
 
 ## macOS drag-and-drop app
 
-The native SwiftUI app accepts one or more `.gba` files, 48×48 icon art, and
+The native SwiftUI app accepts one or more `.gba`, `.sfc`, or `.smc` files, 48×48 icon art, and
 256×128 banner art. Its two-column editor provides live 3DS previews plus title,
 publisher, title ID, product code, and save-type controls. Each `.cia` is written
 next to its source ROM. It bundles no Python runtime, Pillow, or Rosetta-only tool.
+
+GBA titles use the original vcoven AGB_FIRM injection pipeline. SNES titles use
+the Snes9x 3DS ELF and RomFS layout from Ryuzaki-MrL/OldSNES, so they also run on
+Old 3DS models. Input artwork is center-cropped and resized to the exact SMDH
+24×24/48×48 icon sizes; banner artwork is letterboxed to exactly 256×128.
 
 ```bash
 ./scripts/build-macos-app.sh
