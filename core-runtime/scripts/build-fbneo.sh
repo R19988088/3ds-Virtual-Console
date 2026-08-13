@@ -8,15 +8,15 @@ OUTPUT="${FBNEO_OUTPUT:-$ROOT/core-runtime/dist/fbneo}"
 EXPECTED_COMMIT="${FBNEO_COMMIT:-2fcb2628fbfd529806e75f3559a9d82758c8a5cc}"
 DEVKITARM_ROOT="${DEVKITARM:-/opt/devkitpro/devkitARM}"
 STRIP="$DEVKITARM_ROOT/bin/arm-none-eabi-strip"
+AR="$DEVKITARM_ROOT/bin/arm-none-eabi-ar"
 # FBNeo's all-driver target has a high peak memory footprint.  The container
 # can report the host's CPU count, so use a conservative default and allow CI
 # or local builds to override it explicitly.
 JOBS="${JOBS:-2}"
-NEWLINE=$'\n'
 
 test -d "$SOURCE/.git"
 test "$(git -C "$SOURCE" rev-parse HEAD)" = "$EXPECTED_COMMIT"
-for tool in arm-none-eabi-g++ arm-none-eabi-strip arm-none-eabi-readelf; do
+for tool in arm-none-eabi-ar arm-none-eabi-g++ arm-none-eabi-strip arm-none-eabi-readelf; do
     test -x "$DEVKITARM_ROOT/bin/$tool" || {
         printf 'missing devkitARM tool: %s/bin/%s\n' "$DEVKITARM_ROOT" "$tool" >&2
         exit 1
@@ -36,12 +36,24 @@ make -C "$BUILD/src/burner/libretro" -f Makefile \
 env \
     CFLAGS='-DIOAPI_NO_64' \
     CXXFLAGS='-include wchar.h' \
-    "NEWLINE=$NEWLINE" \
     make -C "$BUILD/src/burner/libretro" -f Makefile -j"$JOBS" \
-    platform=ctr SUBSET=all REGEN_HEADERS=1 INCLUDE_CHD_SUPPORT=0 SPLIT_UP_LINK=1
+    platform=ctr SUBSET=all REGEN_HEADERS=1 INCLUDE_CHD_SUPPORT=0 SPLIT_UP_LINK=1 AR=:
 
 CORE="$BUILD/src/burner/libretro/fbneo_all_libretro_ctr.a"
+# GNU Make 3.81's split archive recipe can return 1 after all objects were
+# compiled. Let Make build the dependencies, suppress that recipe, then use
+# the exact expanded object list to create and inspect the archive here.
+OBJECTS_LINE=$(make -C "$BUILD/src/burner/libretro" -f Makefile -pn -n \
+    platform=ctr SUBSET=all REGEN_HEADERS=1 INCLUDE_CHD_SUPPORT=0 SPLIT_UP_LINK=1 AR=: \
+    | sed -n 's/^OBJS := //p')
+read -r -a OBJECTS <<< "$OBJECTS_LINE"
+test "${#OBJECTS[@]}" -gt 0
+"$AR" rcs "$CORE" "${OBJECTS[@]}"
 test -s "$CORE"
+"$AR" t "$CORE" > "$BUILD/fbneo_archive_members.txt"
+test "$(wc -l < "$BUILD/fbneo_archive_members.txt")" -eq "${#OBJECTS[@]}"
+grep -Fxq '../../burner/libretro/libretro.o' "$BUILD/fbneo_archive_members.txt"
+grep -Fxq '../../burner/libretro/retro_common.o' "$BUILD/fbneo_archive_members.txt"
 cp "$CORE" "$OUTPUT/runtime.a"
 printf '%s\n' "$EXPECTED_COMMIT  FBNeo source" > "$OUTPUT/SOURCE.txt"
 
