@@ -39,15 +39,22 @@ OBJECTS_LINE=$(make -C "$BUILD/src/burner/libretro" -f Makefile -pn -n \
     | sed -n 's/^OBJS := //p')
 read -r -a OBJECTS <<< "$OBJECTS_LINE"
 test "${#OBJECTS[@]}" -gt 0
-# Avoid FBNeo's 1102-command archive recipe entirely. Keep its object
-# prerequisites, then create the static archive below.
+# Avoid FBNeo's 1102-command archive recipe entirely. Generate headers first,
+# then build an explicit object-only aggregate target.
+env \
+    CFLAGS='-DIOAPI_NO_64' \
+    CXXFLAGS='-include wchar.h' \
+    make -C "$BUILD/src/burner/libretro" \
+    -f Makefile \
+    platform=ctr SUBSET=all REGEN_HEADERS=1 INCLUDE_CHD_SUPPORT=0 SPLIT_UP_LINK=1 \
+    generate-files
 env \
     CFLAGS='-DIOAPI_NO_64' \
     CXXFLAGS='-include wchar.h' \
     make -C "$BUILD/src/burner/libretro" \
     -f Makefile -f "$ROOT/core-runtime/scripts/fbneo-no-archive.mk" -j"$JOBS" \
     platform=ctr SUBSET=all REGEN_HEADERS=1 INCLUDE_CHD_SUPPORT=0 SPLIT_UP_LINK=1 \
-    all
+    fbneo_objects
 (cd "$BUILD/src/burner/libretro" && "$AR" rcs "$CORE" "${OBJECTS[@]}")
 test -s "$CORE"
 (cd "$BUILD/src/burner/libretro" && "$AR" t "$CORE") > "$BUILD/fbneo_archive_members.txt"
