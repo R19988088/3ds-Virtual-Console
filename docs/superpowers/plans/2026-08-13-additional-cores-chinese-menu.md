@@ -333,6 +333,7 @@ git commit -m "feat: add minimal Chinese 3DS core runtime"
 
 **文件：**
 - 修改：`core-runtime/scripts/build-core-packs.sh`
+- 创建：`core-runtime/scripts/build-fba2012.sh`
 - 创建：`core-runtime/core-options-zh/genesis-plus-gx.h`
 - 创建：`core-runtime/tests/verify-genesis-pack.sh`
 
@@ -395,8 +396,12 @@ git commit -m "build: add Neo Geo Pocket core pack"
 - 修改：`core-runtime/scripts/build-core-packs.sh`
 - 创建：`core-runtime/core-options-zh/fba2012.h`
 - 创建：`core-runtime/tests/verify-fba-pack.sh`
+- 创建：`core-runtime/patches/fba2012-ignore-rom-crc.patch`
+- 创建：`core-runtime/tests/verify-fba-crc-patch.sh`
+- 创建：`core-runtime/tests/verify-fba-crc-contract.sh`
+- 创建：`.github/workflows/build-fba2012.yml`
 
-- [ ] **步骤 1：写单核心约束并确认失败**
+- [x] **步骤 1：写单核心约束并确认失败**
 
 ```bash
 test -f "$PACK/runtime.elf"
@@ -411,11 +416,13 @@ strings "$PACK/runtime.elf" | rg -q '0.2.97.29'
 
 预期：通用 FBA 产物尚不存在。
 
-- [ ] **步骤 2：编译一个通用 FBA 2012**
+- [ ] **步骤 2：编译一个通用 FBA 2012（已接入构建脚本，待 devkitARM）**
 
-运行：`core-runtime/scripts/build-core-packs.sh fba2012`
+运行：`core-runtime/scripts/build-fba2012.sh`；GitHub Actions 使用 `.github/workflows/build-fba2012.yml` 在 Ubuntu runner 安装 devkitARM 后构建并上传 ARM 静态核心。
 
 使用 `LIBRETRO=fbalpha2012`，不生成 CPS/NeoGeo 专用变体；RSF 使用 80 MB Old 3DS 模式和 124 MB New 3DS 扩展模式，保留上游 `APP_BIG_TEXT_SECTION`。
+
+编译参数加入 `-DFBA_IGNORE_ROM_CRC=1` 并应用 `core-runtime/patches/fba2012-ignore-rom-crc.patch`。核心按归一化文件名寻找 ROM，CRC 不参与拒绝；仍要求文件名匹配且解压后的字节长度不小于驱动声明长度。CRC 差异只写入日志，映射失败、缺文件和长度不足仍返回加载失败。当前脚本固定上游提交 `0ce31536bef3162fe7e69ff5f555334ec4913cef`，产物为 `runtime.a`；生成 3DS 可加载 ELF 仍需 devkitARM/RetroArch 3DS 链接步骤。
 
 - [ ] **步骤 3：翻译加载错误**
 
@@ -425,6 +432,7 @@ strings "$PACK/runtime.elf" | rg -q '0.2.97.29'
 
 ```bash
 core-runtime/tests/verify-fba-pack.sh core-runtime/dist/fba2012
+core-runtime/tests/verify-fba-crc-patch.sh .core-build/fbalpha2012
 git add core-runtime/scripts/build-core-packs.sh core-runtime/core-options-zh/fba2012.h core-runtime/tests/verify-fba-pack.sh
 git commit -m "build: add single FBA 2012 core pack"
 ```

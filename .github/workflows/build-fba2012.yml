@@ -1,0 +1,61 @@
+name: Build FBA 2012 core
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "core-runtime/**"
+      - ".github/workflows/build-fba2012.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check out vcoven
+        uses: actions/checkout@v4
+
+      - name: Install devkitARM
+        shell: bash
+        run: |
+          set -euo pipefail
+          wget -qO- https://apt.devkitpro.org/install-devkitpro-pacman | sudo bash
+          sudo dkp-pacman -Syu --noconfirm
+          sudo dkp-pacman -S --noconfirm 3ds-dev
+          echo "DEVKITPRO=/opt/devkitpro" >> "$GITHUB_ENV"
+          echo "DEVKITARM=/opt/devkitpro/devkitARM" >> "$GITHUB_ENV"
+
+      - name: Check out pinned FBA source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --no-checkout https://github.com/libretro/fbalpha2012.git work/fbalpha2012
+          git -C work/fbalpha2012 fetch --depth 1 origin 0ce31536bef3162fe7e69ff5f555334ec4913cef
+          git -C work/fbalpha2012 checkout --detach 0ce31536bef3162fe7e69ff5f555334ec4913cef
+
+      - name: Verify CRC patch contract
+        run: core-runtime/tests/verify-fba-crc-contract.sh
+
+      - name: Build ARM static core
+        shell: bash
+        env:
+          FBA_SOURCE: ${{ github.workspace }}/work/fbalpha2012
+          FBA_OUTPUT: ${{ github.workspace }}/core-runtime/dist/fba2012
+        run: core-runtime/scripts/build-fba2012.sh
+
+      - name: Inspect artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s core-runtime/dist/fba2012/runtime.a
+          file core-runtime/dist/fba2012/runtime.a
+          sha256sum core-runtime/dist/fba2012/runtime.a > core-runtime/dist/fba2012/SHA256SUMS
+
+      - name: Upload FBA core artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fba2012-crc-ignore-arm
+          path: core-runtime/dist/fba2012
+          if-no-files-found: error
