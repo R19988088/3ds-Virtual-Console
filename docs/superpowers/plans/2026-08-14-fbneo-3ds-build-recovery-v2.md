@@ -81,7 +81,7 @@
 ## 任务 4：一次性恢复全量对象（下一步）
 
 - [x] **步骤 1：全量前置条件。** target-only、trace、object-boundary 的 artifact、对象哈希和实验文档均存在；object-boundary run `31773213035` 通过。
-- [ ] **步骤 2：运行一次全量对象实验。** 使用 `.github/workflows/experiment-fbneo-full-objects.yml`，传入 `object_boundary_run=31773213035`；保持 `JOBS=1`，保存对象 stdout/stderr、对象目录清单和退出码；失败时立即上传并停止，不自动重试。
+- [x] **步骤 2：运行一次全量对象实验。** run `31774399878` 使用 `object_boundary_run=31773213035`，`object_count=1102`、`make_objects=0`、`missing_objects=0`；对象 manifest 为 1102/1102，未生成 archive 或 launcher。
 - [ ] **步骤 3：验证 archive。** 只在对象全部存在时用 `arm-none-eabi-ar` 生成 `runtime.a`，检查对象数量、`Cyclone.o`、`libretro.o`、`retro_common.o` 和关键 `retro_*` 符号。
 - [ ] **步骤 4：记录成功工具链。** 只有完整对象和 archive 成功后才记录 image digest 为候选 pin；此前所有 digest 都是实验身份。
 

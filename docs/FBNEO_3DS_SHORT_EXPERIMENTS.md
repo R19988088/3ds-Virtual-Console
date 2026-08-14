@@ -90,13 +90,20 @@ workflow：`.github/workflows/experiment-fbneo-object-boundary.yml`
 
 判定要求已满足。下一阶段允许安排一次全量对象构建；失败时只保留全量对象 artifact，不自动重试、不进入 archive/link。
 
-## 实验 6：full-object（待运行）
+## 实验 6：full-object
 
 workflow：`.github/workflows/experiment-fbneo-full-objects.yml`
 
-该 workflow 必须接收实验 5 的成功 run ID（当前为 `31773213035`），只执行 `fbneo_objects`，不调用 `arm-none-eabi-ar`、launcher 或 archive。它会记录实际 `OBJS` 数量、`objects.txt`、每个对象的大小和 SHA-256、缺失对象计数及退出码。
+该 workflow 接收实验 5 的成功 run ID `31773213035`，只执行 `fbneo_objects`，不调用 `arm-none-eabi-ar`、launcher 或 archive。
 
-判定要求：`make_objects=0`、`missing_objects=0`，且对象数量不少于 1000。只有满足这些条件，才允许进入 archive/link 阶段。
+- Actions run：`31774399878`
+- 提交：`9294184`
+- 结果：success；`object_count=1102`、`make_objects=0`、`missing_objects=0`。
+- `objects.txt` 和 `files.txt` 均为 1102 行，所有对象都有大小和 SHA-256。
+- `Cyclone.o`：506252 bytes，SHA-256 `5a680f5d1750c1f57465e40f25b7f30591edd5f8ab81a108261469b255427cc7`。
+- `make.stderr` 仅包含编译警告和命令输出，没有 fatal/error；本阶段没有生成 archive 或 launcher。
+
+判定要求已满足。现在允许进入 archive/link 阶段；该阶段仍必须单独记录退出码和 ELF/archive 检查，失败时不进入 macOS app 或真机验收。
 
 ## 复现实验
 
