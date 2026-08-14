@@ -15,7 +15,7 @@
 - 同一 run 的诊断 artifact 已验证：`gcc_driver=passed`、`preprocessor=0`、`direct_as=0`，三个 stderr 文件为空。由此排除“GNU assembler 直接拒绝该源文件”这一解释。
 - run `31771289419`（提交 `d884fff`）加入了全量构建目录的 Cyclone preflight 和失败日志上传；该 run 已主动取消，未形成 preflight 或全量对象结论。
 - 本地 macOS 没有 devkitARM；本地已通过 shell/契约/YAML 检查和 Swift 9 项测试。真实 ARM 证据只来自 Actions。
-- 当前远端 `main` 为 `d884fff`，工作树干净。已有修改保留，但后续先补短实验，不继续追加猜测性修复。
+- 当前远端 `main` 为 `96d70b8`，工作树干净。`safe.directory` 修复已在两个 target-only run 中验证；后续先补短实验，不继续追加猜测性修复。
 
 ## v2 架构
 
@@ -56,7 +56,7 @@
   ```
   记录 `set -x`、`ulimit -a`、`/proc/meminfo`、`df -h`、工具版本和返回码；不执行其它对象。
 - [x] **步骤 3：比较同一目录的三条路径。** 从 Make dry-run 提取命令；在同一 build 目录用 shell 直接执行该命令；再预处理并调用同一 `arm-none-eabi-as`。记录三个对象的大小、mtime 和 SHA-256。
-- [ ] **步骤 4：Actions 短跑。** `gh workflow run diagnose-fbneo-target.yml --ref main`，最长等待 5 分钟；下载 `cyclone-target-<run_id>`，先读取 `status.txt` 再决定下一步。
+- [x] **步骤 4：Actions 短跑。** `gh workflow run diagnose-fbneo-target.yml --ref main`，最长等待 5 分钟；下载 `cyclone-target-<run_id>`，先读取 `status.txt` 再决定下一步。
 
 **判定：**
 
@@ -66,10 +66,10 @@
 
 ## 任务 2：固定工具链和资源证据
 
-- [ ] **步骤 1：记录容器身份。** workflow 输出容器 image 字符串、`gcc/as` 完整版本、内核/架构、`ulimit -a`、`df -h` 和 `/proc/meminfo`；不把当前失败的 `latest` digest 直接当成功 pin。
-- [ ] **步骤 2：重复 target-only 两次。** 两次使用不同临时 build 目录，结果、对象哈希和退出码必须一致；任一次超时都保留 artifact。
+- [x] **步骤 1：记录容器身份。** workflow 输出容器 image 字符串、`gcc/as` 完整版本、内核/架构、`ulimit -a`、`df -h` 和 `/proc/meminfo`；不把当前失败的 `latest` digest 直接当成功 pin。
+- [x] **步骤 2：重复 target-only 两次。** 两次使用不同临时 build 目录，结果、对象哈希和退出码必须一致；任一次超时都保留 artifact。
 - [ ] **步骤 3：记录 Make 追踪。** 对通过的 target-only 增加 `--trace` 和 `-d`，只上传该目标日志；检查是否存在隐含的 `.d`、目录创建或二次 recipe。
-- [ ] **步骤 4：提交实验结果。** 更新 `docs/FBNEO_3DS_SHORT_EXPERIMENTS.md`，写入 run ID、命令、退出码、对象哈希和资源快照；此文档提交前不启动全量构建。
+- [x] **步骤 4：提交实验结果。** 更新 `docs/FBNEO_3DS_SHORT_EXPERIMENTS.md`，写入 run ID、命令、退出码、对象哈希和资源快照；此文档提交前不启动全量构建。
 
 ## 任务 3：只修复已证明的 Make 边界
 
