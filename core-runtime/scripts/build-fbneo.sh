@@ -74,4 +74,6 @@ printf '%s\n' "$HEADER" | grep -Eq '^ *Machine:[[:space:]]+ARM$'
 printf '%s\n' "$HEADER" | grep -Eq '^ *Flags:[[:space:]]+0x05000000, Version5 EABI'
 size=$(wc -c < "$OUTPUT/fbneo_3ds.elf")
 test "$size" -lt $((16 * 1024 * 1024))
+"$ROOT/core-runtime/tests/verify-fbneo-artifact.sh" \
+    "$OUTPUT/runtime.a" "$OUTPUT/fbneo_3ds.elf" "$OUTPUT/SOURCE.txt" "${#OBJECTS[@]}"
 printf '%s\n' "FBNeo 3DS launcher completed: $size bytes"

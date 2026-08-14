@@ -40,6 +40,16 @@ jobs:
           mkdir -p Sources/VcovenApp/Resources/arcade
           gh run download "$run_id" --name fbneo-3ds --dir Sources/VcovenApp/Resources/arcade
           test -s Sources/VcovenApp/Resources/arcade/fbneo_3ds.elf
+          test -s Sources/VcovenApp/Resources/arcade/runtime.a
+          test -s Sources/VcovenApp/Resources/arcade/SOURCE.txt
+          test -s Sources/VcovenApp/Resources/arcade/SHA256SUMS
+          for artifact in fbneo_3ds.elf runtime.a; do
+            expected="$(awk -v name="$artifact" '$2 == name || $2 ~ ("/" name "$") { print $1 }' Sources/VcovenApp/Resources/arcade/SHA256SUMS)"
+            actual="$(shasum -a 256 "Sources/VcovenApp/Resources/arcade/$artifact" | awk '{ print $1 }')"
+            test -n "$expected"
+            test "$actual" = "$expected"
+          done
+          grep -Eq '^[0-9a-f]{40}[[:space:]]+FBNeo source$' Sources/VcovenApp/Resources/arcade/SOURCE.txt
 
       - name: Test
         run: swift test

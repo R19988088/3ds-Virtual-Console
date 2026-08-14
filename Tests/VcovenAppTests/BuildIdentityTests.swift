@@ -96,6 +96,32 @@ func testBuildsSNESCIAEndToEnd() throws {
     let attributes = try FileManager.default.attributesOfItem(atPath: configuration.outputURL.path)
     XCTAssertGreaterThan((attributes[.size] as? NSNumber)?.intValue ?? 0, romURL.fileSize)
 }
+
+func testBuildsArcadeCIAWithRuntimeFixture() throws {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("vcoven-arcade-test-\(UUID().uuidString)")
+    let resources = directory.appendingPathComponent("Resources")
+    try FileManager.default.createDirectory(at: resources, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+
+    let bundled = try XCTUnwrap(Bundle.module.resourceURL)
+    for item in try FileManager.default.contentsOfDirectory(at: bundled, includingPropertiesForKeys: nil) {
+        try FileManager.default.copyItem(at: item, to: resources.appendingPathComponent(item.lastPathComponent))
+    }
+    let arcade = resources.appendingPathComponent("arcade")
+    try FileManager.default.createDirectory(at: arcade, withIntermediateDirectories: true)
+    let runtime = try XCTUnwrap(Bundle.module.url(forResource: "snes/snes9x_3ds", withExtension: "elf"))
+    try FileManager.default.copyItem(at: runtime, to: arcade.appendingPathComponent("fbneo_3ds.elf"))
+
+    let romURL = directory.appendingPathComponent("Test Arcade.zip")
+    try Data(repeating: 0x5A, count: 4096).write(to: romURL)
+    var configuration = BuildConfiguration(romURL: romURL)
+    configuration.bannerURL = resources.appendingPathComponent("default-banner.png")
+    try VcovenConverter(resources: directory).build(configuration)
+
+    let attributes = try FileManager.default.attributesOfItem(atPath: configuration.outputURL.path)
+    XCTAssertGreaterThan((attributes[.size] as? NSNumber)?.intValue ?? 0, romURL.fileSize)
+}
 }
 
 private extension URL {

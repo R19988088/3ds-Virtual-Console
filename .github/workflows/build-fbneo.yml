@@ -31,6 +31,28 @@ jobs:
       - name: Verify build contract
         run: core-runtime/tests/verify-fbneo-contract.sh
 
+      - name: Diagnose Cyclone assembler
+        env:
+          FBNEO_SOURCE: ${{ github.workspace }}/work/FBNeo
+          CYCLONE_DIAGNOSTIC_OUTPUT: ${{ github.workspace }}/core-runtime/dist/cyclone-diagnostic
+          DEVKITARM_IMAGE: devkitpro/devkitarm:latest
+        shell: bash
+        run: |
+          set -u
+          core-runtime/scripts/diagnose-cyclone.sh
+          status=$?
+          test -s core-runtime/dist/cyclone-diagnostic/status.txt
+          printf 'Cyclone diagnostic exit: %s\n' "$status"
+          exit 0
+
+      - name: Upload Cyclone diagnostic
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cyclone-diagnostic-${{ github.run_id }}
+          path: core-runtime/dist/cyclone-diagnostic
+          if-no-files-found: warn
+
       - name: Build self-hosted FBNeo 3DS launcher
         env:
           FBNEO_SOURCE: ${{ github.workspace }}/work/FBNeo
@@ -48,6 +70,10 @@ jobs:
           printf '%s\n' "$header" | grep -Eq '^ *Data:[[:space:]]+2.s complement, little endian$'
           printf '%s\n' "$header" | grep -Eq '^ *Machine:[[:space:]]+ARM$'
           printf '%s\n' "$header" | grep -Eq '^ *Flags:[[:space:]]+0x05000000, Version5 EABI'
+          core-runtime/tests/verify-fbneo-artifact.sh \
+            core-runtime/dist/fbneo/runtime.a \
+            core-runtime/dist/fbneo/fbneo_3ds.elf \
+            core-runtime/dist/fbneo/SOURCE.txt
           sha256sum core-runtime/dist/fbneo/* > core-runtime/dist/fbneo/SHA256SUMS
 
       - name: Upload FBNeo artifact

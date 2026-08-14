@@ -185,18 +185,57 @@ static void mkdirs(void)
     mkdir("sdmc:/vcoven/saves", 0777);
 }
 
+static bool save_path_for_rom(const char *rom_path, char *path, size_t capacity)
+{
+    const char *name = strrchr(rom_path, '/');
+    name = name ? name + 1 : rom_path;
+    int written = snprintf(path, capacity, "sdmc:/vcoven/saves/%s.sav", name);
+    return written > 0 && (size_t)written < capacity;
+}
+
+static void load_ram(const char *rom_path)
+{
+    size_t size = retro_get_memory_size(RETRO_MEMORY_SAVE_RAM);
+    void *data = retro_get_memory_data(RETRO_MEMORY_SAVE_RAM);
+    if (!size || !data)
+        return;
+
+    char save_path[256];
+    if (!save_path_for_rom(rom_path, save_path, sizeof(save_path)))
+        return;
+    FILE *file = fopen(save_path, "rb");
+    if (!file)
+        return;
+    memset(data, 0, size);
+    (void)fread(data, 1, size, file);
+    fclose(file);
+}
+
 static void save_ram(const char *rom_path)
 {
     size_t size = retro_get_memory_size(RETRO_MEMORY_SAVE_RAM);
     void *data = retro_get_memory_data(RETRO_MEMORY_SAVE_RAM);
     if (!size || !data)
         return;
-    const char *name = strrchr(rom_path, '/');
-    name = name ? name + 1 : rom_path;
+
     char save_path[256];
-    snprintf(save_path, sizeof(save_path), "sdmc:/vcoven/saves/%s.sav", name);
-    FILE *file = fopen(save_path, "wb");
-    if (file) { fwrite(data, 1, size, file); fclose(file); }
+    if (!save_path_for_rom(rom_path, save_path, sizeof(save_path)))
+        return;
+    char temp_path[264];
+    int written = snprintf(temp_path, sizeof(temp_path), "%s.tmp", save_path);
+    if (written <= 0 || (size_t)written >= sizeof(temp_path))
+        return;
+    FILE *file = fopen(temp_path, "wb");
+    if (!file)
+        return;
+    size_t written_bytes = fwrite(data, 1, size, file);
+    if (fclose(file) != 0 || written_bytes != size)
+    {
+        remove(temp_path);
+        return;
+    }
+    if (rename(temp_path, save_path) != 0)
+        remove(temp_path);
 }
 
 int main(void)
@@ -244,6 +283,7 @@ int main(void)
         gfxExit();
         return 1;
     }
+    load_ram(rom_path);
 
     while (aptMainLoop())
     {
