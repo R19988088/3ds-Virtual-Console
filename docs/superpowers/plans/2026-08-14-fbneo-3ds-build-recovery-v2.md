@@ -15,7 +15,7 @@
 - 同一 run 的诊断 artifact 已验证：`gcc_driver=passed`、`preprocessor=0`、`direct_as=0`，三个 stderr 文件为空。由此排除“GNU assembler 直接拒绝该源文件”这一解释。
 - run `31771289419`（提交 `d884fff`）加入了全量构建目录的 Cyclone preflight 和失败日志上传；该 run 已主动取消，未形成 preflight 或全量对象结论。
 - 本地 macOS 没有 devkitARM；本地已通过 shell/契约/YAML 检查和 Swift 9 项测试。真实 ARM 证据只来自 Actions。
-- 当前远端 `main` 为 `96d70b8`，工作树干净。`safe.directory` 修复已在两个 target-only run 中验证；后续先补短实验，不继续追加猜测性修复。
+- 当前远端 `main` 为 `a77d2ce`，工作树干净。`safe.directory` 修复已在两个 target-only run 中验证；trace run `31772723755` 再次通过，后续先做对象边界实验，不继续追加猜测性修复。
 
 ## v2 架构
 
@@ -68,15 +68,15 @@
 
 - [x] **步骤 1：记录容器身份。** workflow 输出容器 image 字符串、`gcc/as` 完整版本、内核/架构、`ulimit -a`、`df -h` 和 `/proc/meminfo`；不把当前失败的 `latest` digest 直接当成功 pin。
 - [x] **步骤 2：重复 target-only 两次。** 两次使用不同临时 build 目录，结果、对象哈希和退出码必须一致；任一次超时都保留 artifact。
-- [ ] **步骤 3：记录 Make 追踪。** 对通过的 target-only 增加 `--trace` 和 `-d`，只上传该目标日志；检查是否存在隐含的 `.d`、目录创建或二次 recipe。
+- [x] **步骤 3：记录 Make 追踪。** run `31772723755` 增加 `--trace` 和 `-d`；`Cyclone.o` 只命中 `Cyclone.S`，`.d` 只依赖源文件，无二次 recipe 或隐藏目录操作。
 - [x] **步骤 4：提交实验结果。** 更新 `docs/FBNEO_3DS_SHORT_EXPERIMENTS.md`，写入 run ID、命令、退出码、对象哈希和资源快照；此文档提交前不启动全量构建。
 
-## 任务 3：只修复已证明的 Make 边界
+## 任务 3：验证对象边界
 
-- [ ] **步骤 1：Make 非 0而 shell/direct-as 为 0时，最小化 recipe。** 为 `Cyclone.S` 增加专用规则，显式写出 source、output 和 assembler 参数；保留 C/C++ 规则与 `USE_CYCLONE=1`。
-- [ ] **步骤 2：加入 `-B` 和目标存在性检查。** 规则完成后立即检查 `Cyclone.o` 为非空、ELF relocatable、路径与 `OBJS` 完全一致；不依赖旧对象或 `.d` 文件。
-- [ ] **步骤 3：重复短跑。** 两次 target-only 通过后，再构造 `object-boundary` 实验；该实验只编译明确列出的 10 个对象和 Cyclone，不使用 `SUBSET=all` 的完整目标。
-- [ ] **步骤 4：失败回滚。** 若专用规则没有改变退出码，撤销该规则，回到任务 2 的日志分析；不继续扩展参数集合。
+- [x] **步骤 1：固定对象集合。** 新增 `core-runtime/scripts/experiment-fbneo-object-boundary.sh`，只编译 10 个明确 C/C++/CPU 对象和 `Cyclone.o`。
+- [x] **步骤 2：固定输出证据。** 脚本记录 `targets.txt`、Make stdout/stderr、每个对象大小和 SHA-256、Cyclone ELF header 及 `status.txt`。
+- [ ] **步骤 3：运行短实验。** 运行 `.github/workflows/experiment-fbneo-object-boundary.yml`；必须得到 `make_objects=0`、`missing_objects=0`。
+- [ ] **步骤 4：失败停止。** 任一对象失败时只分析该 artifact；不改写 `Cyclone.S`，不触发全量构建。
 
 ## 任务 4：一次性恢复全量对象
 
@@ -94,7 +94,7 @@
 
 ## 明确禁止的重复路径
 
-- [ ] 未取得 target-only 三条路径的退出码前，不运行 `fbneo_objects`。
+- [ ] 未取得 object-boundary 的 11 个对象证据前，不运行 `fbneo_objects`。
 - [ ] 不因空 stderr 直接改写 `Cyclone.S`，不切换 Musashi，不扩大参数集合。
 - [ ] 不把 Swift CIA fixture 或静态契约测试当成 ARM 运行时证据。
 - [ ] 不在没有成功 artifact 的情况下触发 macOS app workflow。
@@ -107,6 +107,9 @@ git log -2 --oneline
 gh workflow run diagnose-fbneo-target.yml --ref main
 gh run list --workflow diagnose-fbneo-target.yml --branch main --limit 1 \
   --json databaseId,status,url
+gh workflow run experiment-fbneo-object-boundary.yml --ref main
+gh run list --workflow experiment-fbneo-object-boundary.yml --branch main --limit 1 \
+  --json databaseId,status,url
 ```
 
-下一次只允许得到一个短实验结果；根据 `status.txt` 进入任务 2 或任务 3，不重复昨天的长构建路径。
+下一次只允许得到一个 object-boundary 短实验结果；根据其 `status.txt` 决定是否进入全量对象构建，不重复昨天的长构建路径。

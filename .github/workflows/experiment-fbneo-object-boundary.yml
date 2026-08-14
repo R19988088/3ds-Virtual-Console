@@ -1,0 +1,51 @@
+name: Experiment FBNeo object boundary
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  object-boundary:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    container:
+      image: devkitpro/devkitarm:latest
+      options: --user root
+    steps:
+      - name: Check out vcoven
+        uses: actions/checkout@v4
+
+      - name: Check out pinned FBNeo source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --no-checkout https://github.com/libretro/FBNeo.git work/FBNeo
+          git -C work/FBNeo fetch --depth 1 origin 2fcb2628fbfd529806e75f3559a9d82758c8a5cc
+          git -C work/FBNeo checkout --detach 2fcb2628fbfd529806e75f3559a9d82758c8a5cc
+
+      - name: Verify object-boundary contract
+        run: core-runtime/tests/verify-fbneo-object-boundary-contract.sh
+
+      - name: Run object-boundary experiment
+        env:
+          FBNEO_SOURCE: ${{ github.workspace }}/work/FBNeo
+          FBNEO_OBJECT_OUTPUT: ${{ github.workspace }}/core-runtime/dist/object-boundary
+          DEVKITARM_IMAGE: devkitpro/devkitarm:latest
+        shell: bash
+        run: |
+          set +e
+          core-runtime/scripts/experiment-fbneo-object-boundary.sh
+          rc=$?
+          printf 'object-boundary exit: %s\n' "$rc"
+          test -s core-runtime/dist/object-boundary/status.txt
+          exit "$rc"
+
+      - name: Upload object-boundary evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fbneo-object-boundary-${{ github.run_id }}
+          path: core-runtime/dist/object-boundary
+          if-no-files-found: warn
