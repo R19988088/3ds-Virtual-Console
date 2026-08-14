@@ -1,0 +1,51 @@
+name: Diagnose FBNeo Cyclone target
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  target:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    container:
+      image: devkitpro/devkitarm:latest
+      options: --user root
+    steps:
+      - name: Check out vcoven
+        uses: actions/checkout@v4
+
+      - name: Check out pinned FBNeo source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --no-checkout https://github.com/libretro/FBNeo.git work/FBNeo
+          git -C work/FBNeo fetch --depth 1 origin 2fcb2628fbfd529806e75f3559a9d82758c8a5cc
+          git -C work/FBNeo checkout --detach 2fcb2628fbfd529806e75f3559a9d82758c8a5cc
+
+      - name: Verify target diagnostic contract
+        run: core-runtime/tests/verify-cyclone-target-contract.sh
+
+      - name: Run Cyclone target experiment
+        env:
+          FBNEO_SOURCE: ${{ github.workspace }}/work/FBNeo
+          CYCLONE_TARGET_OUTPUT: ${{ github.workspace }}/core-runtime/dist/cyclone-target
+          DEVKITARM_IMAGE: devkitpro/devkitarm:latest
+        shell: bash
+        run: |
+          set +e
+          core-runtime/scripts/diagnose-cyclone-target.sh
+          rc=$?
+          printf 'target diagnostic exit: %s\n' "$rc"
+          test -s core-runtime/dist/cyclone-target/status.txt
+          exit 0
+
+      - name: Upload Cyclone target evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cyclone-target-${{ github.run_id }}
+          path: core-runtime/dist/cyclone-target
+          if-no-files-found: warn

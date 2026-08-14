@@ -45,8 +45,8 @@
 
 ## 任务 1：建立分钟级 target-only 实验
 
-- [ ] **步骤 1：先写契约。** `verify-cyclone-target-contract.sh` 检查固定 commit、`Cyclone.S`、输出目录、`command.txt`、`make.stdout`、`make.stderr`、`driver.stderr`、`as.stderr`、`resource.txt` 和 `status.txt`。
-- [ ] **步骤 2：实现隔离脚本。** `diagnose-cyclone-target.sh` 复制固定源码到新 build 目录，只执行 `generate-files` 和：
+- [x] **步骤 1：先写契约。** `verify-cyclone-target-contract.sh` 检查固定 commit、`Cyclone.S`、输出目录、`command.txt`、`make.stdout`、`make.stderr`、`driver.stderr`、`as.stderr`、`resource.txt` 和 `status.txt`。
+- [x] **步骤 2：实现隔离脚本。** `diagnose-cyclone-target.sh` 复制固定源码到新 build 目录，只执行 `generate-files` 和：
   ```bash
   make -C "$BUILD/src/burner/libretro" \
     -f Makefile -f core-runtime/scripts/fbneo-no-archive.mk \
@@ -55,7 +55,7 @@
     ../../cpu/cyclone/Cyclone.o
   ```
   记录 `set -x`、`ulimit -a`、`/proc/meminfo`、`df -h`、工具版本和返回码；不执行其它对象。
-- [ ] **步骤 3：比较同一目录的三条路径。** 从 Make dry-run 提取命令；在同一 build 目录用 shell 直接执行该命令；再预处理并调用同一 `arm-none-eabi-as`。记录三个对象的大小、mtime 和 SHA-256。
+- [x] **步骤 3：比较同一目录的三条路径。** 从 Make dry-run 提取命令；在同一 build 目录用 shell 直接执行该命令；再预处理并调用同一 `arm-none-eabi-as`。记录三个对象的大小、mtime 和 SHA-256。
 - [ ] **步骤 4：Actions 短跑。** `gh workflow run diagnose-fbneo-target.yml --ref main`，最长等待 5 分钟；下载 `cyclone-target-<run_id>`，先读取 `status.txt` 再决定下一步。
 
 **判定：**
