@@ -1,5 +1,7 @@
 # FBNeo 3DS 构建恢复实现计划
 
+> 本文件已被 `2026-08-14-fbneo-3ds-build-recovery-v2.md` 替代。原计划曾把全量 1102 对象构建作为过早门槛，导致诊断周期过长；后续执行只采用 v2 的短实验顺序。
+
 > **面向 AI 代理的工作者：** 必须使用 `superpowers:executing-plans` 或 `superpowers:subagent-driven-development` 逐任务执行。每项任务都要先完成验证命令，再进入下一项；不要把静态检查、交叉编译和真机验收合并成一个结论。
 
 **目标：** 在固定 FBNeo 提交 `2fcb2628fbfd529806e75f3559a9d82758c8a5cc` 的前提下恢复 FBNeo 3DS 自托管核心构建，保留 `Cyclone` 68000 核心，生成可验证的 `runtime.a`、`fbneo_3ds.elf` 和 GitHub Actions artifact；再把该 artifact 接入 macOS app 的 arcade CIA 路线，并完成 SRAM、ROM/BIOS、视频、音频、输入和 Old/New 3DS 验收。
