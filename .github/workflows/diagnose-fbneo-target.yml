@@ -33,6 +33,7 @@ jobs:
           FBNEO_SOURCE: ${{ github.workspace }}/work/FBNeo
           CYCLONE_TARGET_OUTPUT: ${{ github.workspace }}/core-runtime/dist/cyclone-target
           DEVKITARM_IMAGE: devkitpro/devkitarm:latest
+          CYCLONE_TARGET_TRACE: 1
         shell: bash
         run: |
           set +e

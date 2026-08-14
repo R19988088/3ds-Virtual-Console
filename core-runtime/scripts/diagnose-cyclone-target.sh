@@ -121,6 +121,14 @@ printf '%s\n' "$AS $AS_FLAGS $PREPROCESSED -o $OUTPUT/Cyclone.as.o" > "$OUTPUT/a
 as_code=$?
 record direct_as "$as_code"
 
+if [ "${CYCLONE_TARGET_TRACE:-0}" = 1 ]; then
+    make -C "$LIBRETRO" -f Makefile -f "$ROOT/core-runtime/scripts/fbneo-no-archive.mk" \
+        --trace -d -j1 "${make_args[@]}" "$TARGET" \
+        > "$OUTPUT/trace.stdout" 2> "$OUTPUT/trace.stderr"
+    trace_code=$?
+    record make_trace "$trace_code"
+fi
+
 digest_file() {
     if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1" | awk '{print $1}';
     else shasum -a 256 "$1" | awk '{print $1}'; fi
