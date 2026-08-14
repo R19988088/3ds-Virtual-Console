@@ -15,7 +15,7 @@
 - 同一 run 的诊断 artifact 已验证：`gcc_driver=passed`、`preprocessor=0`、`direct_as=0`，三个 stderr 文件为空。由此排除“GNU assembler 直接拒绝该源文件”这一解释。
 - run `31771289419`（提交 `d884fff`）加入了全量构建目录的 Cyclone preflight 和失败日志上传；该 run 已主动取消，未形成 preflight 或全量对象结论。
 - 本地 macOS 没有 devkitARM；本地已通过 shell/契约/YAML 检查和 Swift 9 项测试。真实 ARM 证据只来自 Actions。
-- 当前远端 `main` 为 `477c1a7`。`safe.directory` 修复已在两个 target-only run 中验证；trace run `31772723755` 和 object-boundary run `31773213035` 均通过，不再追加 Cyclone 猜测性修复。
+- 当前远端 `main` 为 `1576135`。`safe.directory` 修复已在两个 target-only run 中验证；trace run `31772723755`、object-boundary run `31773213035` 和 full-object run `31774399878` 均通过，不再追加 Cyclone 猜测性修复。
 
 ## v2 架构
 
