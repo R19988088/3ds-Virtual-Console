@@ -56,6 +56,9 @@ done
 
 rm -rf "$BUILD"
 mkdir -p "$BUILD"
+git config --global --add safe.directory "$ROOT"
+git config --global --add safe.directory "$SOURCE"
+git config --global --add safe.directory "$BUILD"
 if ! git -C "$SOURCE" archive --format=tar HEAD | tar -xf - -C "$BUILD"; then
     fail "failed to export pinned FBNeo source"
 fi

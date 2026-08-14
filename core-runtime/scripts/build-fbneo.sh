@@ -28,6 +28,7 @@ git config --global --add safe.directory "$SOURCE"
 
 rm -rf "$BUILD" "$OUTPUT" "$FAILURE_OUTPUT"
 mkdir -p "$BUILD" "$OUTPUT" "$FAILURE_OUTPUT"
+git config --global --add safe.directory "$BUILD"
 git -C "$SOURCE" archive --format=tar HEAD | tar -xf - -C "$BUILD"
 
 # FBNeo already provides the 3DS static libretro target; this wrapper only
