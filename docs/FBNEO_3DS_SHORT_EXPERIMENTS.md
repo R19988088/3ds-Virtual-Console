@@ -105,6 +105,13 @@ workflow：`.github/workflows/experiment-fbneo-full-objects.yml`
 
 判定要求已满足。现在允许进入 archive/link 阶段；该阶段仍必须单独记录退出码和 ELF/archive 检查，失败时不进入 macOS app 或真机验收。
 
+## 旧全量 workflow 复核
+
+- 自动触发 run：`31774385389`（提交 `9294184`）失败，耗时约 19 分钟。
+- 该 run 的 Cyclone diagnostic 通过，但旧 `build-fbneo.sh` 没有上传 post-object 失败日志；`fbneo-build-diagnostic` artifact 为空，无法区分 archive、launcher 或最终检查。
+- 这不是新的 `Cyclone.S` 失败证据：full-object run `31774399878` 已独立生成 1102/1102 对象。
+- 已补强 `build-fbneo.sh`：失败 trap 会复制全部输出，archive create/list 和 launcher 分别保存 stdout/stderr。下一次 archive/link 运行前必须使用这版脚本。
+
 ## 复现实验
 
 ```bash

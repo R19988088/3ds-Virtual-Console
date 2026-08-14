@@ -28,6 +28,17 @@ git config --global --add safe.directory "$SOURCE"
 
 rm -rf "$BUILD" "$OUTPUT" "$FAILURE_OUTPUT"
 mkdir -p "$BUILD" "$OUTPUT" "$FAILURE_OUTPUT"
+
+capture_failure() {
+    rc=$?
+    if [ "$rc" -ne 0 ]; then
+        printf 'build_exit=%s\n' "$rc" > "$FAILURE_OUTPUT/failure-exit.txt"
+        cp -R "$OUTPUT"/. "$FAILURE_OUTPUT"/ 2>/dev/null || true
+    fi
+    exit "$rc"
+}
+trap capture_failure EXIT
+
 git config --global --add safe.directory "$BUILD"
 git -C "$SOURCE" archive --format=tar HEAD | tar -xf - -C "$BUILD"
 
@@ -77,17 +88,26 @@ if ! env \
     cp -R "$OUTPUT"/. "$FAILURE_OUTPUT"/
     exit 1
 fi
-(cd "$BUILD/src/burner/libretro" && "$AR" rcs "$CORE" "${OBJECTS[@]}")
+if ! (cd "$BUILD/src/burner/libretro" && "$AR" rcs "$CORE" "${OBJECTS[@]}") \
+    > "$OUTPUT/archive-create.stdout" 2> "$OUTPUT/archive-create.stderr"; then
+    exit 1
+fi
 test -s "$CORE"
-(cd "$BUILD/src/burner/libretro" && "$AR" t "$CORE") > "$BUILD/fbneo_archive_members.txt"
+if ! (cd "$BUILD/src/burner/libretro" && "$AR" t "$CORE") \
+    > "$BUILD/fbneo_archive_members.txt" 2> "$OUTPUT/archive-list.stderr"; then
+    exit 1
+fi
 test "$(wc -l < "$BUILD/fbneo_archive_members.txt")" -eq "${#OBJECTS[@]}"
 grep -Fxq '../../burner/libretro/libretro.o' "$BUILD/fbneo_archive_members.txt"
 grep -Fxq '../../burner/libretro/retro_common.o' "$BUILD/fbneo_archive_members.txt"
 cp "$CORE" "$OUTPUT/runtime.a"
 printf '%s\n' "$EXPECTED_COMMIT  FBNeo source" > "$OUTPUT/SOURCE.txt"
 
-FBNEO_CORE="$CORE" FBNEO_SOURCE="$SOURCE" FBNEO_LAUNCHER_OUTPUT="$OUTPUT/fbneo_3ds.elf" \
-    "$ROOT/core-runtime/scripts/build-fbneo-launcher.sh"
+if ! FBNEO_CORE="$CORE" FBNEO_SOURCE="$SOURCE" FBNEO_LAUNCHER_OUTPUT="$OUTPUT/fbneo_3ds.elf" \
+    "$ROOT/core-runtime/scripts/build-fbneo-launcher.sh" \
+    > "$OUTPUT/launcher.stdout" 2> "$OUTPUT/launcher.stderr"; then
+    exit 1
+fi
 HEADER=$("$DEVKITARM_ROOT/bin/arm-none-eabi-readelf" -h "$OUTPUT/fbneo_3ds.elf")
 printf '%s\n' "$HEADER" | grep -Eq '^ *Class:[[:space:]]+ELF32$'
 printf '%s\n' "$HEADER" | grep -Eq '^ *Data:[[:space:]]+2.s complement, little endian$'
