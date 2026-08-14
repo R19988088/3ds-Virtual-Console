@@ -5,6 +5,7 @@ ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 SOURCE="${FBNEO_SOURCE:-$ROOT/work/FBNeo}"
 BUILD="${FBNEO_BUILD:-$ROOT/.core-build/fbneo}"
 OUTPUT="${FBNEO_OUTPUT:-$ROOT/core-runtime/dist/fbneo}"
+FAILURE_OUTPUT="${FBNEO_FAILURE_OUTPUT:-$ROOT/core-runtime/dist/fbneo-build-diagnostic}"
 EXPECTED_COMMIT="${FBNEO_COMMIT:-2fcb2628fbfd529806e75f3559a9d82758c8a5cc}"
 DEVKITARM_ROOT="${DEVKITARM:-/opt/devkitpro/devkitARM}"
 STRIP="$DEVKITARM_ROOT/bin/arm-none-eabi-strip"
@@ -25,8 +26,8 @@ done
 git config --global --add safe.directory "$ROOT"
 git config --global --add safe.directory "$SOURCE"
 
-rm -rf "$BUILD" "$OUTPUT"
-mkdir -p "$BUILD" "$OUTPUT"
+rm -rf "$BUILD" "$OUTPUT" "$FAILURE_OUTPUT"
+mkdir -p "$BUILD" "$OUTPUT" "$FAILURE_OUTPUT"
 git -C "$SOURCE" archive --format=tar HEAD | tar -xf - -C "$BUILD"
 
 # FBNeo already provides the 3DS static libretro target; this wrapper only
@@ -41,21 +42,40 @@ read -r -a OBJECTS <<< "$OBJECTS_LINE"
 test "${#OBJECTS[@]}" -gt 0
 # Avoid FBNeo's 1102-command archive recipe entirely. Generate headers first,
 # then build an explicit object-only aggregate target.
-env \
+if ! env \
     CFLAGS='-DIOAPI_NO_64' \
     CXXFLAGS='-include wchar.h' \
     make -C "$BUILD/src/burner/libretro" \
     -f Makefile \
     platform=ctr SUBSET=all REGEN_HEADERS=1 INCLUDE_CHD_SUPPORT=0 SPLIT_UP_LINK=1 \
-    generate-files
-env \
+    generate-files > "$OUTPUT/generate-files.stdout" 2> "$OUTPUT/generate-files.stderr"; then
+    cp -R "$OUTPUT"/. "$FAILURE_OUTPUT"/
+    exit 1
+fi
+CYCLONE_OBJECT='../../cpu/cyclone/Cyclone.o'
+if ! env \
+    CFLAGS='-DIOAPI_NO_64' \
+    CXXFLAGS='-include wchar.h' \
+    make -C "$BUILD/src/burner/libretro" \
+    -f Makefile -f "$ROOT/core-runtime/scripts/fbneo-no-archive.mk" \
+    --output-sync=target -j1 \
+    platform=ctr SUBSET=all REGEN_HEADERS=1 INCLUDE_CHD_SUPPORT=0 SPLIT_UP_LINK=1 \
+    "$CYCLONE_OBJECT" > "$OUTPUT/cyclone-preflight.stdout" 2> "$OUTPUT/cyclone-preflight.stderr"; then
+    cp -R "$OUTPUT"/. "$FAILURE_OUTPUT"/
+    exit 1
+fi
+test -s "$BUILD/src/cpu/cyclone/Cyclone.o"
+if ! env \
     CFLAGS='-DIOAPI_NO_64' \
     CXXFLAGS='-include wchar.h' \
     make -C "$BUILD/src/burner/libretro" \
     -f Makefile -f "$ROOT/core-runtime/scripts/fbneo-no-archive.mk" \
     --output-sync=target -j"$JOBS" \
     platform=ctr SUBSET=all REGEN_HEADERS=1 INCLUDE_CHD_SUPPORT=0 SPLIT_UP_LINK=1 \
-    fbneo_objects
+    fbneo_objects > "$OUTPUT/fbneo-objects.stdout" 2> "$OUTPUT/fbneo-objects.stderr"; then
+    cp -R "$OUTPUT"/. "$FAILURE_OUTPUT"/
+    exit 1
+fi
 (cd "$BUILD/src/burner/libretro" && "$AR" rcs "$CORE" "${OBJECTS[@]}")
 test -s "$CORE"
 (cd "$BUILD/src/burner/libretro" && "$AR" t "$CORE") > "$BUILD/fbneo_archive_members.txt"

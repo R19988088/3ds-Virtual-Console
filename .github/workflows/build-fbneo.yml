@@ -57,7 +57,16 @@ jobs:
         env:
           FBNEO_SOURCE: ${{ github.workspace }}/work/FBNeo
           FBNEO_OUTPUT: ${{ github.workspace }}/core-runtime/dist/fbneo
+          FBNEO_FAILURE_OUTPUT: ${{ github.workspace }}/core-runtime/dist/fbneo-build-diagnostic
         run: core-runtime/scripts/build-fbneo.sh
+
+      - name: Upload FBNeo build diagnostic
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fbneo-build-diagnostic-${{ github.run_id }}
+          path: core-runtime/dist/fbneo-build-diagnostic
+          if-no-files-found: warn
 
       - name: Check launcher artifact
         shell: bash
