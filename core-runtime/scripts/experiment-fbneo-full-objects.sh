@@ -7,6 +7,7 @@ BUILD="${FBNEO_BUILD:-$ROOT/.core-build/full-objects}"
 OUTPUT="${FBNEO_FULL_OBJECT_OUTPUT:-$ROOT/core-runtime/dist/full-objects}"
 EXPECTED_COMMIT="${FBNEO_COMMIT:-2fcb2628fbfd529806e75f3559a9d82758c8a5cc}"
 BOUNDARY_RUN="${OBJECT_BOUNDARY_RUN:-}"
+DELIVER="${FBNEO_DELIVER:-0}"
 DEVKITARM_ROOT="${DEVKITARM:-/opt/devkitpro/devkitARM}"
 LIBRETRO="$BUILD/src/burner/libretro"
 STATUS="$OUTPUT/status.txt"
@@ -27,7 +28,7 @@ record actual_commit "$actual_commit"
 if [ "$actual_commit" != "$EXPECTED_COMMIT" ]; then
     fail "FBNeo commit mismatch: expected $EXPECTED_COMMIT, got ${actual_commit:-unknown}"
 fi
-for tool in arm-none-eabi-gcc arm-none-eabi-ar arm-none-eabi-readelf; do
+for tool in arm-none-eabi-gcc arm-none-eabi-ar arm-none-eabi-nm arm-none-eabi-readelf arm-none-eabi-g++; do
     if [ ! -x "$DEVKITARM_ROOT/bin/$tool" ]; then fail "missing devkitARM tool: $tool"; fi
 done
 
@@ -87,6 +88,60 @@ record missing_objects "$missing"
 if [ -s "$BUILD/src/cpu/cyclone/Cyclone.o" ]; then
     "$DEVKITARM_ROOT/bin/arm-none-eabi-readelf" -h "$BUILD/src/cpu/cyclone/Cyclone.o" > "$OUTPUT/Cyclone.readelf.txt" 2> "$OUTPUT/Cyclone.readelf.stderr" || true
 fi
-if [ "$make_code" -eq 0 ] && [ "$missing" -eq 0 ]; then record result passed; else record result failed; fi
+if [ "$make_code" -ne 0 ] || [ "$missing" -ne 0 ]; then
+    record result failed
+    printf '%s\n' "full-object evidence: $OUTPUT"
+    exit 1
+fi
+
+record objects_result passed
+if [ "$DELIVER" = 1 ]; then
+    CORE="$LIBRETRO/fbneo_all_libretro_ctr.a"
+    if ! (cd "$LIBRETRO" && "$DEVKITARM_ROOT/bin/arm-none-eabi-ar" rcs "$CORE" "${objects[@]}") \
+        > "$OUTPUT/archive-create.stdout" 2> "$OUTPUT/archive-create.stderr"; then
+        record archive failed
+        record result failed
+        exit 1
+    fi
+    if ! (cd "$LIBRETRO" && "$DEVKITARM_ROOT/bin/arm-none-eabi-ar" t "$CORE") \
+        > "$OUTPUT/archive-members.txt" 2> "$OUTPUT/archive-list.stderr"; then
+        record archive failed
+        record result failed
+        exit 1
+    fi
+    test "$(wc -l < "$OUTPUT/archive-members.txt" | tr -d ' ')" -eq "${#objects[@]}"
+    cp "$CORE" "$OUTPUT/runtime.a"
+    printf '%s  FBNeo source\n' "$EXPECTED_COMMIT" > "$OUTPUT/SOURCE.txt"
+    if ! FBNEO_CORE="$CORE" FBNEO_SOURCE="$SOURCE" \
+        FBNEO_LAUNCHER_BUILD="$BUILD/launcher" \
+        FBNEO_LAUNCHER_OUTPUT="$OUTPUT/fbneo_3ds.elf" \
+        "$ROOT/core-runtime/scripts/build-fbneo-launcher.sh" \
+        > "$OUTPUT/launcher.stdout" 2> "$OUTPUT/launcher.stderr"; then
+        record archive passed
+        record launcher failed
+        record result failed
+        exit 1
+    fi
+    if ! "$ROOT/core-runtime/tests/verify-fbneo-artifact.sh" \
+        "$OUTPUT/runtime.a" "$OUTPUT/fbneo_3ds.elf" "$OUTPUT/SOURCE.txt" "${#objects[@]}" \
+        > "$OUTPUT/artifact-verification.txt" 2>&1; then
+        record archive passed
+        record launcher passed
+        record artifact failed
+        record result failed
+        exit 1
+    fi
+    record archive passed
+    record launcher passed
+    record artifact passed
+    if command -v sha256sum >/dev/null 2>&1; then
+        sha256sum "$OUTPUT/runtime.a" "$OUTPUT/fbneo_3ds.elf" "$OUTPUT/SOURCE.txt" > "$OUTPUT/SHA256SUMS"
+    else
+        shasum -a 256 "$OUTPUT/runtime.a" "$OUTPUT/fbneo_3ds.elf" "$OUTPUT/SOURCE.txt" > "$OUTPUT/SHA256SUMS"
+    fi
+    record result delivered
+else
+    record result passed
+fi
 printf '%s\n' "full-object evidence: $OUTPUT"
-exit "$([ "$make_code" -eq 0 ] && [ "$missing" -eq 0 ]; echo $?)"
+exit 0

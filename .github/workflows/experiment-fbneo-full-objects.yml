@@ -33,18 +33,19 @@ jobs:
       - name: Verify full-object contract
         run: core-runtime/tests/verify-fbneo-full-objects-contract.sh
 
-      - name: Run full-object experiment
+      - name: Build and deliver embedded FBNeo core
         env:
           FBNEO_SOURCE: ${{ github.workspace }}/work/FBNeo
           FBNEO_FULL_OBJECT_OUTPUT: ${{ github.workspace }}/core-runtime/dist/full-objects
           OBJECT_BOUNDARY_RUN: ${{ inputs.object_boundary_run }}
+          FBNEO_DELIVER: '1'
           DEVKITARM_IMAGE: devkitpro/devkitarm:latest
         shell: bash
         run: |
           set +e
           core-runtime/scripts/experiment-fbneo-full-objects.sh
           rc=$?
-          printf 'full-object exit: %s\n' "$rc"
+          printf 'embedded-core delivery exit: %s\n' "$rc"
           test -s core-runtime/dist/full-objects/status.txt
           exit "$rc"
 
@@ -52,6 +53,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: fbneo-full-objects-${{ github.run_id }}
+          name: fbneo-embedded-core-${{ github.run_id }}
           path: core-runtime/dist/full-objects
           if-no-files-found: warn

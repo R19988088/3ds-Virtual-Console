@@ -81,8 +81,8 @@
 ## 任务 4：一次性恢复全量对象（下一步）
 
 - [x] **步骤 1：全量前置条件。** target-only、trace、object-boundary 的 artifact、对象哈希和实验文档均存在；object-boundary run `31773213035` 通过。
-- [x] **步骤 2：运行一次全量对象实验。** run `31774399878` 使用 `object_boundary_run=31773213035`，`object_count=1102`、`make_objects=0`、`missing_objects=0`；对象 manifest 为 1102/1102，未生成 archive 或 launcher。
-- [ ] **步骤 3：验证 archive。** 只在对象全部存在时用 `arm-none-eabi-ar` 生成 `runtime.a`，检查对象数量、`Cyclone.o`、`libretro.o`、`retro_common.o` 和关键 `retro_*` 符号。
+- [x] **步骤 2：对象前置验证。** run `31774399878` 使用 `object_boundary_run=31773213035`，`object_count=1102`、`make_objects=0`、`missing_objects=0`；对象 manifest 为 1102/1102。
+- [ ] **步骤 3：一次性交付核心。** 将 `FBNEO_DELIVER=1` 接入同一次全量构建，生成并上传 `runtime.a`、`fbneo_3ds.elf`、`SOURCE.txt`、`SHA256SUMS`；成功后禁止再次触发核心编译。
 - [ ] **步骤 3a：先固定失败证据。** 旧 run `31774385389` 在 full-object 之后失败但没有 post-object artifact；`build-fbneo.sh` 已增加失败 trap 及 archive/launcher 分阶段日志，下一次运行先读取这些日志再判断修复点。
 - [ ] **步骤 3b：手动触发边界。** `build-fbneo.yml` 已移除 push 触发，只能在 archive/link 前置条件满足后通过 `workflow_dispatch` 运行，避免计划外重复全量构建。
 - [ ] **步骤 4：记录成功工具链。** 只有完整对象和 archive 成功后才记录 image digest 为候选 pin；此前所有 digest 都是实验身份。

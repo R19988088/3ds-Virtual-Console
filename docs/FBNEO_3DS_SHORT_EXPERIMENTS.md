@@ -90,9 +90,11 @@ workflow：`.github/workflows/experiment-fbneo-object-boundary.yml`
 
 判定要求已满足。下一阶段允许安排一次全量对象构建；失败时只保留全量对象 artifact，不自动重试、不进入 archive/link。
 
-## 实验 6：full-object
+## 实验 6：embedded-core delivery（待运行）
 
 workflow：`.github/workflows/experiment-fbneo-full-objects.yml`
+
+实验 6 不再停在对象清单；它会在同一次全量编译后生成 `runtime.a` 和 `fbneo_3ds.elf`，上传四个交付文件。成功后本地继续集成，禁止再次触发核心编译。
 
 该 workflow 接收实验 5 的成功 run ID `31773213035`，只执行 `fbneo_objects`，不调用 `arm-none-eabi-ar`、launcher 或 archive。
 
