@@ -61,9 +61,16 @@
 
 该实验确认修复后的 target-only 路径已稳定，下一步是用固定的 10 个 C/C++/CPU 对象加 `Cyclone.o` 验证对象边界，不生成 archive，不触发 launcher。
 
-## 实验 5：object-boundary（待运行）
+## 实验 5：object-boundary
 
 workflow：`.github/workflows/experiment-fbneo-object-boundary.yml`
+
+- Actions run：`31773213035`
+- 提交：`477c1a7`
+- 结果：success；固定 commit 一致，`generate_files=passed`、`make_objects=0`、`missing_objects=0`。
+- 11 个对象均有大小和 SHA-256；`Cyclone.o` 为 506252 bytes，SHA-256 仍为 `5a680f5d1750c1f57465e40f25b7f30591edd5f8ab81a108261469b255427cc7`。
+- `Cyclone.o` 仍为 ELF32、ARM、little-endian、REL、Version5 EABI。
+- `make.stderr` 只有完整命令追踪，没有 Git ownership、编译器或 assembler 错误。
 
 固定对象为：
 
@@ -81,7 +88,15 @@ workflow：`.github/workflows/experiment-fbneo-object-boundary.yml`
 ../../cpu/cyclone/Cyclone.o
 ```
 
-判定要求：`make_objects=0`、`missing_objects=0`，并且 `files.txt` 中 11 个对象都有大小和 SHA-256。失败时只分析该 artifact，不进入全量对象构建。
+判定要求已满足。下一阶段允许安排一次全量对象构建；失败时只保留全量对象 artifact，不自动重试、不进入 archive/link。
+
+## 实验 6：full-object（待运行）
+
+workflow：`.github/workflows/experiment-fbneo-full-objects.yml`
+
+该 workflow 必须接收实验 5 的成功 run ID（当前为 `31773213035`），只执行 `fbneo_objects`，不调用 `arm-none-eabi-ar`、launcher 或 archive。它会记录实际 `OBJS` 数量、`objects.txt`、每个对象的大小和 SHA-256、缺失对象计数及退出码。
+
+判定要求：`make_objects=0`、`missing_objects=0`，且对象数量不少于 1000。只有满足这些条件，才允许进入 archive/link 阶段。
 
 ## 复现实验
 
@@ -94,5 +109,9 @@ cat /tmp/cyclone-target-RUN_ID/status.txt
 
 gh workflow run experiment-fbneo-object-boundary.yml --ref main
 gh run list --workflow experiment-fbneo-object-boundary.yml --branch main --limit 1 \
+  --json databaseId,status,url
+gh workflow run experiment-fbneo-full-objects.yml --ref main \
+  -f object_boundary_run=31773213035
+gh run list --workflow experiment-fbneo-full-objects.yml --branch main --limit 1 \
   --json databaseId,status,url
 ```

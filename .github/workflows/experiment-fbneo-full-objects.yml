@@ -1,0 +1,57 @@
+name: Experiment FBNeo full objects
+
+on:
+  workflow_dispatch:
+    inputs:
+      object_boundary_run:
+        description: 'Successful object-boundary run ID'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  full-objects:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 35
+    container:
+      image: devkitpro/devkitarm:latest
+      options: --user root
+    steps:
+      - name: Check out vcoven
+        uses: actions/checkout@v4
+
+      - name: Check out pinned FBNeo source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --no-checkout https://github.com/libretro/FBNeo.git work/FBNeo
+          git -C work/FBNeo fetch --depth 1 origin 2fcb2628fbfd529806e75f3559a9d82758c8a5cc
+          git -C work/FBNeo checkout --detach 2fcb2628fbfd529806e75f3559a9d82758c8a5cc
+
+      - name: Verify full-object contract
+        run: core-runtime/tests/verify-fbneo-full-objects-contract.sh
+
+      - name: Run full-object experiment
+        env:
+          FBNEO_SOURCE: ${{ github.workspace }}/work/FBNeo
+          FBNEO_FULL_OBJECT_OUTPUT: ${{ github.workspace }}/core-runtime/dist/full-objects
+          OBJECT_BOUNDARY_RUN: ${{ inputs.object_boundary_run }}
+          DEVKITARM_IMAGE: devkitpro/devkitarm:latest
+        shell: bash
+        run: |
+          set +e
+          core-runtime/scripts/experiment-fbneo-full-objects.sh
+          rc=$?
+          printf 'full-object exit: %s\n' "$rc"
+          test -s core-runtime/dist/full-objects/status.txt
+          exit "$rc"
+
+      - name: Upload full-object evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fbneo-full-objects-${{ github.run_id }}
+          path: core-runtime/dist/full-objects
+          if-no-files-found: warn

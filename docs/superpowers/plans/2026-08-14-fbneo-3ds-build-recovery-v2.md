@@ -15,7 +15,7 @@
 - 同一 run 的诊断 artifact 已验证：`gcc_driver=passed`、`preprocessor=0`、`direct_as=0`，三个 stderr 文件为空。由此排除“GNU assembler 直接拒绝该源文件”这一解释。
 - run `31771289419`（提交 `d884fff`）加入了全量构建目录的 Cyclone preflight 和失败日志上传；该 run 已主动取消，未形成 preflight 或全量对象结论。
 - 本地 macOS 没有 devkitARM；本地已通过 shell/契约/YAML 检查和 Swift 9 项测试。真实 ARM 证据只来自 Actions。
-- 当前远端 `main` 为 `a77d2ce`，工作树干净。`safe.directory` 修复已在两个 target-only run 中验证；trace run `31772723755` 再次通过，后续先做对象边界实验，不继续追加猜测性修复。
+- 当前远端 `main` 为 `477c1a7`。`safe.directory` 修复已在两个 target-only run 中验证；trace run `31772723755` 和 object-boundary run `31773213035` 均通过，不再追加 Cyclone 猜测性修复。
 
 ## v2 架构
 
@@ -75,13 +75,13 @@
 
 - [x] **步骤 1：固定对象集合。** 新增 `core-runtime/scripts/experiment-fbneo-object-boundary.sh`，只编译 10 个明确 C/C++/CPU 对象和 `Cyclone.o`。
 - [x] **步骤 2：固定输出证据。** 脚本记录 `targets.txt`、Make stdout/stderr、每个对象大小和 SHA-256、Cyclone ELF header 及 `status.txt`。
-- [ ] **步骤 3：运行短实验。** 运行 `.github/workflows/experiment-fbneo-object-boundary.yml`；必须得到 `make_objects=0`、`missing_objects=0`。
-- [ ] **步骤 4：失败停止。** 任一对象失败时只分析该 artifact；不改写 `Cyclone.S`，不触发全量构建。
+- [x] **步骤 3：运行短实验。** run `31773213035` 得到 `make_objects=0`、`missing_objects=0`，11 个对象均有摘要。
+- [x] **步骤 4：失败停止。** 本实验未失败；后续全量阶段仍保持失败即上传并停止的边界。
 
-## 任务 4：一次性恢复全量对象
+## 任务 4：一次性恢复全量对象（下一步）
 
-- [ ] **步骤 1：全量前置条件。** 任务 1-3 的 artifact、对象哈希和实验文档均存在；`object-boundary` 通过；workflow 明确打印前置条件。
-- [ ] **步骤 2：运行一次全量构建。** 保持 `JOBS=1`，保存 `fbneo-objects.stdout/stderr`、对象目录清单和退出码；失败时立即上传并停止，不自动重试。
+- [x] **步骤 1：全量前置条件。** target-only、trace、object-boundary 的 artifact、对象哈希和实验文档均存在；object-boundary run `31773213035` 通过。
+- [ ] **步骤 2：运行一次全量对象实验。** 使用 `.github/workflows/experiment-fbneo-full-objects.yml`，传入 `object_boundary_run=31773213035`；保持 `JOBS=1`，保存对象 stdout/stderr、对象目录清单和退出码；失败时立即上传并停止，不自动重试。
 - [ ] **步骤 3：验证 archive。** 只在对象全部存在时用 `arm-none-eabi-ar` 生成 `runtime.a`，检查对象数量、`Cyclone.o`、`libretro.o`、`retro_common.o` 和关键 `retro_*` 符号。
 - [ ] **步骤 4：记录成功工具链。** 只有完整对象和 archive 成功后才记录 image digest 为候选 pin；此前所有 digest 都是实验身份。
 
@@ -110,6 +110,10 @@ gh run list --workflow diagnose-fbneo-target.yml --branch main --limit 1 \
 gh workflow run experiment-fbneo-object-boundary.yml --ref main
 gh run list --workflow experiment-fbneo-object-boundary.yml --branch main --limit 1 \
   --json databaseId,status,url
+gh workflow run experiment-fbneo-full-objects.yml --ref main \
+  -f object_boundary_run=31773213035
+gh run list --workflow experiment-fbneo-full-objects.yml --branch main --limit 1 \
+  --json databaseId,status,url
 ```
 
-下一次只允许得到一个 object-boundary 短实验结果；根据其 `status.txt` 决定是否进入全量对象构建，不重复昨天的长构建路径。
+下一次只允许运行一次全量对象构建；保持 `JOBS=1`，失败时上传对象日志并停止，不自动重试，不生成 archive 或 launcher。
