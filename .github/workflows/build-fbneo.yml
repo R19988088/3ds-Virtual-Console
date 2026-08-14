@@ -2,10 +2,6 @@ name: Build FBNeo 3DS core
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - "core-runtime/**"
-      - ".github/workflows/build-fbneo.yml"
 
 permissions:
   contents: read

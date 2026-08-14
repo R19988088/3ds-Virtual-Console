@@ -111,6 +111,8 @@ workflow：`.github/workflows/experiment-fbneo-full-objects.yml`
 - 该 run 的 Cyclone diagnostic 通过，但旧 `build-fbneo.sh` 没有上传 post-object 失败日志；`fbneo-build-diagnostic` artifact 为空，无法区分 archive、launcher 或最终检查。
 - 这不是新的 `Cyclone.S` 失败证据：full-object run `31774399878` 已独立生成 1102/1102 对象。
 - 已补强 `build-fbneo.sh`：失败 trap 会复制全部输出，archive create/list 和 launcher 分别保存 stdout/stderr。下一次 archive/link 运行前必须使用这版脚本。
+- 新 run `31775798061`（提交 `89bf1ce`）在 build step 运行约 15 分钟后被主动取消；取消不触发 shell `EXIT` trap，故没有新增 diagnostic 结论。
+- 为避免计划外长跑，`.github/workflows/build-fbneo.yml` 已改为仅 `workflow_dispatch`；后续必须在 archive/link 前置条件满足后手动触发。
 
 ## 复现实验
 
